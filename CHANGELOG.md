@@ -34,4 +34,4 @@ This release does not include Lean's proof system, dependent types, user-defined
 
 ### Migration
 
-Rename `ArgsML.toml` or `Argon.toml` to `Axiom.toml`, rename `.argsml` files to `.ax`, and update the entry path. Existing `fn` declarations and `def ... := expression` definitions remain accepted. New examples use direct brace bodies for `main`. `.ar` and `.fe` remain readable as legacy source extensions.
+Rename `ArgsML.toml` or `Argon.toml` to `Axiom.toml`, rename `.argsml` files to `.ax`, and update the entry path. Existing `fn` declarations and `def ... := expression` definitions remain accepted. New examples can define the entry point as `let main := expression;`. `.ar` and `.fe` remain readable as legacy source extensions.

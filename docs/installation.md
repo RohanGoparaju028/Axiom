@@ -12,6 +12,12 @@ Choose your operating system:
 - [Linux](#linux): Ubuntu/Debian, Fedora, or Arch Linux with GCC and CMake.
 - [Windows](#windows): native Windows builds using MSYS2 UCRT64.
 
+## Download Axiom 0.1.0
+
+Ready-to-run compiler archives are available from the [GitHub release page](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0): [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), and [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip). Extract an archive and add its `bin` directory to `PATH`.
+
+Application builds still need a C++17 Clang or GCC compiler. Windows users should install the UCRT64 toolchain in the Windows section below. The remaining instructions describe building and installing Axiom from source.
+
 ## Requirements
 
 | Requirement | Purpose |

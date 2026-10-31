@@ -28,7 +28,7 @@ entry = "src/main.ax"
 The name is optional and defaults to the directory name. Names contain letters, digits, underscores, or hyphens. If `src/lib.ax`, `lib.ax`, `src/main.ax`, or `main.ax` already exists, the first matching path becomes the entry. Otherwise the default is `src/main.ax`; create that file before building:
 
 ```text
-def main { println("Hello from Axiom!"); }
+let main := println("Hello from Axiom!");
 ```
 
 ```sh
@@ -54,14 +54,14 @@ HTTPS and SSH URLs, `github.com/owner/repository` and `gitlab.com/owner/reposito
 A dependency contains either an `Axiom.toml` specifying its library entry or a `src/lib.ax` / `lib.ax` file. Library declarations intended for callers must be `pub`:
 
 ```text
-pub def double (value : i32) := value * 2;
+pub let double (value : i32) := value * 2;
 ```
 
 Then use it in the application:
 
 ```text
 import math;
-def main { println(math.double(21)); }
+let main := println(math.double(21));
 ```
 
 `import math.extra;` loads `extra.ax` relative to the dependency's library entry directory. Each dependency resolves its own dependencies in its own package namespace. Native sources and include directories from dependency projects participate in the build.

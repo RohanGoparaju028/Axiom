@@ -1,23 +1,21 @@
 # Axiom
 
-Axiom 0.1 is an experimental programming language for building native programs with concise, strongly typed code. Its Lean-inspired syntax includes expression-based functions, immutable bindings, inductive types, and pattern matching. Projects use `.ax` source files, an `Axiom.toml` manifest, and the `axiom` command.
+Axiom 0.1.0 is an experimental, strongly typed language for building native programs. It takes inspiration from Lean and uses `.ax` source files, an `Axiom.toml` manifest, and the `axiom` command. The compiler produces C++17 and uses Clang or GCC to build programs.
 
 ```text
-def add (left right : i32) := left + right;
-
-def main {
-    let answer := add(20, 22);
-    println(answer);
-}
+let add (left right : i32) := left + right;
+let main := println(add(20, 22));
 ```
 
-This program prints `42`. Function parameters have explicit types; the compiler infers the result. Axiom is an early implementation: it does not implement Lean's proof system or dependent types. See [current capabilities and limits](docs/status.md).
+This program prints `42`. `let add` defines a function and `let main` declares the entry point. Parameters have explicit types; results are inferred. Axiom is early software and does not include Lean’s proof system or dependent types. See [current capabilities and limits](docs/status.md).
 
 ## Install
 
-You need Git, CMake 3.16 or newer, a C++17-capable Clang or GCC compiler, and Make or Ninja. Axiom currently compiles through C++17, so keep the native compiler installed to build your programs.
+The release archives below install the compiler directly. Keep a C++17-capable Clang or GCC toolchain installed to build your programs. To build Axiom itself from source, you also need Git, CMake 3.16 or newer, and Make or Ninja.
 
-On macOS or Linux, once those prerequisites are installed:
+Download a ready-to-run compiler archive for [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) from the [Axiom 0.1.0 release](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0). Extract the archive and add its `bin` directory to `PATH`. Building applications still requires Clang or GCC; Windows users can install the UCRT64 toolchain described in the [installation guide](docs/installation.md).
+
+To build Axiom from source on macOS or Linux, install the prerequisites first:
 
 ```sh
 git clone https://github.com/RohanGoparaju028/Argon.git Axiom
@@ -44,7 +42,7 @@ cd hello-axiom
 axiom mod init hello-axiom
 mkdir src
 cat > src/main.ax <<'AX'
-def main { println("Hello from Axiom!"); }
+let main := println("Hello from Axiom!");
 AX
 axiom run
 ```
@@ -70,7 +68,7 @@ entry = "src/main.ax"
 [dependencies]
 ```
 
-Write the entry point as `def main { ... }`, without `:=` or a trailing semicolon. `main` takes no parameters. An effect-only body, such as the `println` above, exits successfully. Returning an `i32` supplies the process exit status.
+Write a simple entry point as `let main := expression;`. `main` takes no parameters. An effect-only body, such as the `println` above, exits successfully. Returning an `i32` supplies the process exit status.
 
 ## Check, build, and run
 
@@ -111,37 +109,34 @@ inductive Outcome where
     | Success (value : i32)
     | Failure (message : string);
 
-def describe (result : Outcome) := match result with
+let describe (result : Outcome) := match result with
     | Outcome::Success(value) => "answer: " + str(value)
     | Outcome::Failure(message) => message;
 
-def main {
-    let double := fun (value : i32) => value * 2;
-    let mut total := 0;
-    for i in 0..5 { total += i; }
-    println(describe(Outcome::Success(double(total))));
-}
+let double (value : i32) := value * 2;
+let total := double(10);
+let main := println(describe(Outcome::Success(total)));
 ```
 
 Run `axiom run`; it prints `answer: 20`.
 
-- `def` defines a function; `fun` creates a closure.
+- `let name (parameters) := expression;` defines a named function; `fun` creates a closure. `def` remains useful for explicit brace bodies and recursive functions.
 - `let name := value` is immutable. Use `let mut` when you need assignment.
 - `inductive` defines a tagged union; `match` checks that all variants are covered.
 - `0..5` includes 0 through 4. Blocks use braces and calls use parentheses.
-- A function's final expression is its result. Recursive `def` functions require an explicit result type.
+- A function's final expression is its result. Recursive functions require an explicit result type.
 
 For a local module, create `src/math.ax`:
 
 ```text
-pub def double (value : i32) := value * 2;
+pub let double (value : i32) := value * 2;
 ```
 
 Then use it from `src/main.ax`:
 
 ```text
 import math;
-def main { println(math.double(21)); }
+let main := println(math.double(21));
 ```
 
 `pub` makes a declaration available to importing modules. This program prints `42`.
@@ -179,7 +174,7 @@ For existing C++ libraries, `axiom new native-demo --cpp` creates an integration
 ## More documentation
 
 - [0.1.0 release notes](CHANGELOG.md)
-
+- [Download Axiom 0.1.0 for Linux, macOS, or Windows](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0)
 - [Getting started](docs/getting-started.md) and [installation](docs/installation.md)
 - [Modules and dependencies](docs/modules.md) and [build configuration](docs/build.md)
 - [Language reference](docs/language.md) and [keywords](docs/keywords.md)

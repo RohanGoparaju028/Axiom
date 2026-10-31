@@ -6,7 +6,7 @@ title: Getting started
 
 ## Install Axiom
 
-Follow the [installation guide](installation.md) for macOS, Linux, or Windows with MSYS2 UCRT64. Installation provides `axiom` and the compatible `axiomc` command. Verify your terminal setup:
+Follow the [installation guide](installation.md) for macOS, Linux, or Windows with MSYS2 UCRT64. Installation provides `axiom` and the compatible `axiomc` command. You can also download the [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) compiler archive from [release 0.1.0](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0). Verify your terminal setup:
 
 ```sh
 axiom --version
@@ -29,12 +29,8 @@ mkdir src
 `mod init` creates only `Axiom.toml`. Create `src/main.ax` in your editor:
 
 ```text
-def add (left right : i32) := left + right;
-
-def main {
-    let answer := add(20, 22);
-    println(answer);
-}
+let add (left right : i32) := left + right;
+let main := println(add(20, 22));
 ```
 
 Run it:
@@ -43,7 +39,7 @@ Run it:
 axiom run
 ```
 
-The program prints `42`. Parameters have explicit types; results can be inferred. `let answer := ...` is immutable. `main` takes no arguments; an effect-only result exits with status 0, while an `i32` result becomes the exit status.
+The program prints `42`. Parameters have explicit types and result types can be inferred. A `let` binding is immutable. A simple `main` entry point is `let main := expression;`. More complex functions can use the established `def` brace-body form.
 
 If you prefer generated starter files, use `axiom new hello-axiom` in the parent directory instead of the initialization commands above. Its destination must not exist.
 
@@ -65,14 +61,14 @@ You can also use `axiom run path/to/program.ax` without a manifest. See [build c
 Create `src/math.ax`:
 
 ```text
-pub def double (value : i32) := value * 2;
+pub let double (value : i32) := value * 2;
 ```
 
 Replace `src/main.ax` with:
 
 ```text
 import math;
-def main { println(math.double(21)); }
+let main := println(math.double(21));
 ```
 
 Run `axiom run` again; it prints `42`. Only declarations marked `pub` are available to importing modules.

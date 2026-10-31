@@ -1,5 +1,5 @@
 title: Axiom
-description: An ML-family language with mutable variables, typed functions, and native C++ interoperability.
+description: A Lean-inspired native programming language with .ax source files and Git-based dependencies.
 url: https://rohangoparaju028.github.io
 baseurl: /Argon
 markdown: kramdown
