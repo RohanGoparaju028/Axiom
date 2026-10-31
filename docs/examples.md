@@ -10,14 +10,14 @@ From the repository root, run `./build/axiomc run examples/NAME.ar` (or use the 
 
 | File | Demonstrates |
 | --- | --- |
-| [native_files/](https://github.com/RohanGoparaju028/Argon/tree/main/examples/native_files) | Complete project with local headers, C/C++ implementations, a header-only function, and a standard-library call |
-| [tour.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/tour.ax) | Compile-time blocks, tagged enums, matches, structs, loops, arrays, switches |
-| [pointers.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/pointers.ax) | Owning pointers, shared mutation, weak upgrade, expiry, and checked access |
-| [family.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/family.ax) | Reference-counted classes with a weak parent link to avoid cycles |
-| [linked_nodes.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/linked_nodes.ax) | A recursive struct linked by typed owning pointers |
-| [collections.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/collections.ax) | Maps, sets, linked lists, stacks, queues, and deques |
-| [shared_collections.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/shared_collections.ax) | Shared storage, explicit cloning, and weak collection observers |
-| [debugging.ax](https://github.com/RohanGoparaju028/Argon/blob/main/examples/debugging.ax) | A small program for source breakpoints and stepping |
+| [native_files/](https://github.com/RohanGoparaju028/Axiom/tree/main/examples/native_files) | Complete project with local headers, C/C++ implementations, a header-only function, and a standard-library call |
+| [tour.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/tour.ax) | Compile-time blocks, tagged enums, matches, structs, loops, arrays, switches |
+| [pointers.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/pointers.ax) | Owning pointers, shared mutation, weak upgrade, expiry, and checked access |
+| [family.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/family.ax) | Reference-counted classes with a weak parent link to avoid cycles |
+| [linked_nodes.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/linked_nodes.ax) | A recursive struct linked by typed owning pointers |
+| [collections.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/collections.ax) | Maps, sets, linked lists, stacks, queues, and deques |
+| [shared_collections.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/shared_collections.ax) | Shared storage, explicit cloning, and weak collection observers |
+| [debugging.ax](https://github.com/RohanGoparaju028/Axiom/blob/main/examples/debugging.ax) | A small program for source breakpoints and stepping |
 
 `axiomc new native-demo --cpp` creates a complete additional example with an Axiom caller and C++ header/source compiled together by the build tool. See [C++ interoperability](cpp.md).
 

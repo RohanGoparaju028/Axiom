@@ -14,7 +14,7 @@ Choose your operating system:
 
 ## Download Axiom 0.1.0
 
-Ready-to-run compiler archives are available from the [GitHub release page](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0): [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), and [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip). Extract an archive and add its `bin` directory to `PATH`.
+Ready-to-run compiler archives are available from the [GitHub release page](https://github.com/RohanGoparaju028/Axiom/releases/tag/v0.1.0): [Linux x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), and [Windows x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip). Extract an archive and add its `bin` directory to `PATH`.
 
 Application builds still need a C++17 Clang or GCC compiler. Windows users should install the UCRT64 toolchain in the Windows section below. The remaining instructions describe building and installing Axiom from source.
 
@@ -62,7 +62,7 @@ clang++ --version
 ### 2. Download, build, and install
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+git clone https://github.com/RohanGoparaju028/Axiom.git Axiom
 cd Axiom
 cmake -S . -B build-install -DCMAKE_BUILD_TYPE=Release
 cmake --build build-install --parallel 2
@@ -135,7 +135,7 @@ g++ --version
 ### 2. Download, build, and install
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+git clone https://github.com/RohanGoparaju028/Axiom.git Axiom
 cd Axiom
 cmake -S . -B build-install -DCMAKE_BUILD_TYPE=Release
 cmake --build build-install --parallel 2
@@ -202,7 +202,7 @@ ninja --version
 Run these commands in that same UCRT64 terminal:
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+git clone https://github.com/RohanGoparaju028/Axiom.git Axiom
 cd Axiom
 cmake -S . -B build-install -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build build-install --parallel 2
@@ -314,7 +314,7 @@ cd ..
 
 On Windows, run this in UCRT64 with `AXIOM_CXX=g++` set as above. Extra editor/debugger tests are discovered when the corresponding tools are installed, so test counts vary. These tests are not required just to invoke the installed compiler.
 
-The repository's [compiler CI](https://github.com/RohanGoparaju028/Argon/actions/workflows/ci.yml) builds/tests on Ubuntu, macOS, and Windows UCRT64. The installation workflow has additionally been smoke-tested locally on macOS; this does not certify every Linux distribution or CPU architecture.
+The repository's [compiler CI](https://github.com/RohanGoparaju028/Axiom/actions/workflows/ci.yml) builds/tests on Ubuntu, macOS, and Windows UCRT64. The installation workflow has additionally been smoke-tested locally on macOS; this does not certify every Linux distribution or CPU architecture.
 
 ## Troubleshooting
 

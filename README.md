@@ -13,12 +13,12 @@ This program prints `42`. `let add` defines a function and `let main` declares t
 
 The release archives below install the compiler directly. Keep a C++17-capable Clang or GCC toolchain installed to build your programs. To build Axiom itself from source, you also need Git, CMake 3.16 or newer, and Make or Ninja.
 
-Download a ready-to-run compiler archive for [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) from the [Axiom 0.1.0 release](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0). Extract the archive and add its `bin` directory to `PATH`. Building applications still requires Clang or GCC; Windows users can install the UCRT64 toolchain described in the [installation guide](docs/installation.md).
+Download a ready-to-run compiler archive for [Linux x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) from the [Axiom 0.1.0 release](https://github.com/RohanGoparaju028/Axiom/releases/tag/v0.1.0). Extract the archive and add its `bin` directory to `PATH`. Building applications still requires Clang or GCC; Windows users can install the UCRT64 toolchain described in the [installation guide](docs/installation.md).
 
 To build Axiom from source on macOS or Linux, install the prerequisites first:
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+git clone https://github.com/RohanGoparaju028/Axiom.git Axiom
 cd Axiom
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
@@ -28,7 +28,7 @@ axiom --version
 axiom doctor
 ```
 
-The repository still lives at its original GitHub URL. If you already have a checkout, start with the CMake commands in that directory. Add the `export PATH` line to your shell configuration to make it persistent. The build also provides `axiomc`, which accepts the same commands.
+The GitHub repository has moved to Axiom. If you already have a checkout, start with the CMake commands in that directory. Add the `export PATH` line to your shell configuration to make it persistent. The build also provides `axiomc`, which accepts the same commands.
 
 For prerequisite installation and platform-specific setup, including Windows through MSYS2 UCRT64, follow the [installation guide](docs/installation.md). Tagged releases publish tested archives for macOS, Linux, and Windows; see [0.1.0 release notes](CHANGELOG.md). To try Axiom without installing it, run `./build/axiom run examples/lean.ax` from the repository.
 
@@ -174,7 +174,7 @@ For existing C++ libraries, `axiom new native-demo --cpp` creates an integration
 ## More documentation
 
 - [0.1.0 release notes](CHANGELOG.md)
-- [Download Axiom 0.1.0 for Linux, macOS, or Windows](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0)
+- [Download Axiom 0.1.0 for Linux, macOS, or Windows](https://github.com/RohanGoparaju028/Axiom/releases/tag/v0.1.0)
 - [Getting started](docs/getting-started.md) and [installation](docs/installation.md)
 - [Modules and dependencies](docs/modules.md) and [build configuration](docs/build.md)
 - [Language reference](docs/language.md) and [keywords](docs/keywords.md)

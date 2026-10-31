@@ -12,11 +12,11 @@ Axiom 0.1.0 has tested compiler archives for three platforms:
 
 | Platform | Download |
 | --- | --- |
-| Linux x86_64 | [axiom-0.1.0-linux-x86_64.zip](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip) |
-| macOS ARM64 | [axiom-0.1.0-macos-arm64.zip](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip) |
-| Windows x86_64 | [axiom-0.1.0-windows-x86_64.zip](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) |
+| Linux x86_64 | [axiom-0.1.0-linux-x86_64.zip](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip) |
+| macOS ARM64 | [axiom-0.1.0-macos-arm64.zip](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip) |
+| Windows x86_64 | [axiom-0.1.0-windows-x86_64.zip](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) |
 
-Extract the archive and put its `bin` directory on your `PATH`. Keep a C++17 Clang or GCC toolchain installed to build applications. Windows users can set up the UCRT64 toolchain using the [installation guide](installation.md#windows). View the [release and its checksums](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0).
+Extract the archive and put its `bin` directory on your `PATH`. Keep a C++17 Clang or GCC toolchain installed to build applications. Windows users can set up the UCRT64 toolchain using the [installation guide](installation.md#windows). View the [release and its checksums](https://github.com/RohanGoparaju028/Axiom/releases/tag/v0.1.0).
 
 ## Your first program
 
@@ -54,4 +54,4 @@ It prints `42`. The program defines `add` and its entry point with `let`; the pa
 
 Axiom takes inspiration from Lean but does not include Lean's proof system or dependent types. It can call into existing C++ libraries through the optional [native integration](cpp.md) boundary. For compiler installation from source, see [Installation](installation.md).
 
-Axiom is licensed under [Apache-2.0](https://github.com/RohanGoparaju028/Argon/blob/main/LICENSE). The source repository retains its [original GitHub name](https://github.com/RohanGoparaju028/Argon).
+Axiom is licensed under [Apache-2.0](https://github.com/RohanGoparaju028/Axiom/blob/main/LICENSE). The source is on [GitHub](https://github.com/RohanGoparaju028/Axiom).

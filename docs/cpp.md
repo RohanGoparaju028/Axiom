@@ -218,6 +218,6 @@ Headers supply declarations to the generated C++ translation unit. Axiom does no
 
 Foreign calls require a lexical `unsafe` block and cannot run in compile-time `test` blocks. Arbitrary C++ code can corrupt memory or crash. Non-finite floating-point results become checked Axiom errors; standard C++ exceptions reaching the program entry are reported, but native crashes and non-standard exceptions are not converted.
 
-Run the repository's [native-files example](https://github.com/RohanGoparaju028/Argon/tree/main/examples/native_files) to exercise local, header-only, C, and standard-library functionality together.
+Run the repository's [native-files example](https://github.com/RohanGoparaju028/Axiom/tree/main/examples/native_files) to exercise local, header-only, C, and standard-library functionality together.
 
 Typed method calls first try an ordinary C++ method with the supplied arguments. If that call is unavailable, the compiler tries the method template with the annotated result type, supporting APIs such as `value.get::<i32>()`. This preserves result annotations on ordinary methods such as `vector.at::<i32>(0)` and `vector.push_back::<unit>(42)`.

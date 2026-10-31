@@ -1,7 +1,7 @@
 title: Axiom
 description: A Lean-inspired native programming language with .ax source files and Git-based dependencies.
 url: https://rohangoparaju028.github.io
-baseurl: /Argon
+baseurl: /Axiom
 markdown: kramdown
 highlighter: rouge
 plugins:

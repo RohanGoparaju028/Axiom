@@ -44,7 +44,7 @@ For the same source inputs and target behavior, compile-time scalar evaluation h
 
 The repository contains native runtime lifetime tests, language/project integration tests, editor command tests, and native debug-symbol checks. The development host has passed these suites. Available suites vary with installed tools.
 
-A Windows Vim integration CI failure has been under investigation. These docs do not certify every editor/platform combination; consult [the repository's workflow runs](https://github.com/RohanGoparaju028/Argon/actions/workflows/ci.yml) for the latest results. Documentation deployment runs independently of compiler CI.
+A Windows Vim integration CI failure has been under investigation. These docs do not certify every editor/platform combination; consult [the repository's workflow runs](https://github.com/RohanGoparaju028/Axiom/actions/workflows/ci.yml) for the latest results. Documentation deployment runs independently of compiler CI.
 
 Native source mappings and breakpoint resolution have been checked. Live LLDB stepping was not verified on the development host because LLDB could not pause the launched process. Editor debugger support requires the relevant backend and host permissions.
 

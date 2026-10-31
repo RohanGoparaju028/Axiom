@@ -6,7 +6,7 @@ title: Getting started
 
 ## Install Axiom
 
-Follow the [installation guide](installation.md) for macOS, Linux, or Windows with MSYS2 UCRT64. Installation provides `axiom` and the compatible `axiomc` command. You can also download the [Linux x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Argon/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) compiler archive from [release 0.1.0](https://github.com/RohanGoparaju028/Argon/releases/tag/v0.1.0). Verify your terminal setup:
+Follow the [installation guide](installation.md) for macOS, Linux, or Windows with MSYS2 UCRT64. Installation provides `axiom` and the compatible `axiomc` command. You can also download the [Linux x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-linux-x86_64.zip), [macOS ARM64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-macos-arm64.zip), or [Windows x86_64](https://github.com/RohanGoparaju028/Axiom/releases/download/v0.1.0/axiom-0.1.0-windows-x86_64.zip) compiler archive from [release 0.1.0](https://github.com/RohanGoparaju028/Axiom/releases/tag/v0.1.0). Verify your terminal setup:
 
 ```sh
 axiom --version
