@@ -11,7 +11,7 @@ def describe (result : Outcome) := match result with
     | Outcome::Success(value) => "answer: " + str(value)
     | Outcome::Failure(message) => message;
 
-def main := {
+def main {
     let double := fun (value : i32) => value * 2;
     let result := Outcome::Success(add(double(20), 2));
     let mut total := 0;
@@ -19,4 +19,4 @@ def main := {
     println(describe(result));
     println(factorial(5));
     println(total);
-};
+}

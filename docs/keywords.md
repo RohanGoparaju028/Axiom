@@ -71,7 +71,7 @@ Build/install `axiomc` using [Getting started](getting-started.md). Save a compl
 
 Declares a named function at module scope. Every parameter needs a type; the return type defaults to `void` if `-> ResultType` is omitted. Functions can call each other and recurse. Arguments are passed by value: scalar/struct values copy, and owning handles retain their shared allocation.
 
-A function returning a value must return on every normal path, explicitly or through a final expression without a semicolon. Short `= expression` functions infer results. Typed closures and first-class function values are supported; nested named declarations and user-defined generic functions are not. Recursive functions require `fn rec` and an explicit result type. An executable needs exactly `fn main() -> i32`, with no parameters.
+A function returning a value must return on every normal path, explicitly or through a final expression without a semicolon. Short `= expression` functions infer results. Typed closures and first-class function values are supported; nested named declarations and user-defined generic functions are not. Recursive functions require `fn rec` and an explicit result type. An executable needs one parameterless `main`, returning `unit` or `i32`; prefer `def main { ... }` for new programs.
 
 ### return
 

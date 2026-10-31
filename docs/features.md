@@ -90,7 +90,7 @@ fn main() -> i32 {
 
 This prints `42`. `21 |> double` means `double(21)`; pipelines can be chained.
 
-**Functions are private to their module by default.** `pub fn` exports a function for importing modules. `priv fn` explicitly states the default. `main` is recognized as the executable entry without `pub`; its required signature is `fn main() -> i32`, and its result is the exit status. Other declarations also use `pub` for module exports.
+**Functions are private to their module by default.** `pub fn` exports a function for importing modules. `priv fn` explicitly states the default. `main` is recognized as the executable entry without `pub`; the standard form is `def main { ... }`. A `unit` result exits successfully, and an `i32` result is the exit status. Other declarations also use `pub` for module exports.
 
 ## Modules and imports
 

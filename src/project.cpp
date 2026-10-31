@@ -117,11 +117,11 @@ void create_project(const fs::path& directory,bool fresh,bool cpp,const fs::path
     files["Axiom.toml"]="[project]\nschema = 1\nname = "+quote(name)+"\nentry = \"src/main.ax\"\n";
     files["Axiom.toml"]+="cxx_dir = "+quote(cxx_dir.generic_string())+"\n";
     files["cpp/README.md"]="# Native files\n\nCopy library headers and implementations here. In Axiom, use cpp \"name.hpp\"; and direct cpp::namespace::function<Result>(arguments) calls inside unsafe blocks.\nAll .cpp, .cc, .cxx, .c++, and .c files in this directory are compiled recursively.\nDo not copy library examples/tests with their own main function here.\nConfigure additional libraries and include directories in [cpp] in Axiom.toml.\n";
-    files["src/main.ax"]="test {\n    const answer: i32 = 6 * 7;\n    assert(answer == 42);\n}\n\nfn main() = {\n    println(\"Hello from Axiom!\");\n    println(answer);\n    0\n};\n";
+    files["src/main.ax"]="test {\n    const answer: i32 = 6 * 7;\n    assert(answer == 42);\n}\n\ndef main {\n    println(\"Hello from Axiom!\");\n    println(answer);\n    0\n}\n";
     if(cpp){
         files["cpp/demo.hpp"]="#pragma once\n#include <cstdint>\nnamespace demo { std::int32_t twice(std::int32_t value); }\n";
         files["cpp/demo.cpp"]="#include \"demo.hpp\"\nstd::int32_t demo::twice(std::int32_t value) { return value * 2; }\n";
-        files["src/main.ax"]="cpp \"demo.hpp\";\n\nfn main() = {\n    unsafe { println(cpp::demo::twice<i32>(21)); }\n    0\n};\n";
+        files["src/main.ax"]="cpp \"demo.hpp\";\n\ndef main {\n    unsafe { println(cpp::demo::twice<i32>(21)); }\n    0\n}\n";
     }
     for(const auto& file:files){auto path=root/file.first;if(!within(root,path)||fs::exists(fs::symlink_status(path)))throw Error("refusing to overwrite "+path.string());auto parent=path.parent_path();if(fs::exists(parent)&&!fs::is_directory(parent))throw Error("project path is not a directory: "+parent.string());}
     for(const auto& file:files){auto path=root/file.first;fs::create_directories(path.parent_path());write_file(path,file.second);}

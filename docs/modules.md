@@ -28,7 +28,7 @@ entry = "src/main.ax"
 The name is optional and defaults to the directory name. Names contain letters, digits, underscores, or hyphens. If `src/lib.ax`, `lib.ax`, `src/main.ax`, or `main.ax` already exists, the first matching path becomes the entry. Otherwise the default is `src/main.ax`; create that file before building:
 
 ```text
-def main := println("Hello from Axiom!");
+def main { println("Hello from Axiom!"); }
 ```
 
 ```sh
@@ -61,7 +61,7 @@ Then use it in the application:
 
 ```text
 import math;
-def main := println(math.double(21));
+def main { println(math.double(21)); }
 ```
 
 `import math.extra;` loads `extra.ax` relative to the dependency's library entry directory. Each dependency resolves its own dependencies in its own package namespace. Native sources and include directories from dependency projects participate in the build.

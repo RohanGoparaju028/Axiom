@@ -1,14 +1,14 @@
 # Axiom
 
-Axiom is an experimental programming language for building native programs with concise, strongly typed code. Its Lean-inspired syntax includes expression-based functions, immutable bindings, inductive types, and pattern matching. Projects use `.ax` source files, an `Axiom.toml` manifest, and the `axiom` command.
+Axiom 0.1 is an experimental programming language for building native programs with concise, strongly typed code. Its Lean-inspired syntax includes expression-based functions, immutable bindings, inductive types, and pattern matching. Projects use `.ax` source files, an `Axiom.toml` manifest, and the `axiom` command.
 
 ```text
 def add (left right : i32) := left + right;
 
-def main := {
+def main {
     let answer := add(20, 22);
     println(answer);
-};
+}
 ```
 
 This program prints `42`. Function parameters have explicit types; the compiler infers the result. Axiom is an early implementation: it does not implement Lean's proof system or dependent types. See [current capabilities and limits](docs/status.md).
@@ -32,7 +32,7 @@ axiom doctor
 
 The repository still lives at its original GitHub URL. If you already have a checkout, start with the CMake commands in that directory. Add the `export PATH` line to your shell configuration to make it persistent. The build also provides `axiomc`, which accepts the same commands.
 
-For prerequisite installation and platform-specific setup, including Windows through MSYS2 UCRT64, follow the [installation guide](docs/installation.md). To try Axiom without installing it, run `./build/axiom run examples/lean.ax` from the repository.
+For prerequisite installation and platform-specific setup, including Windows through MSYS2 UCRT64, follow the [installation guide](docs/installation.md). Tagged releases publish tested archives for macOS, Linux, and Windows; see [0.1.0 release notes](CHANGELOG.md). To try Axiom without installing it, run `./build/axiom run examples/lean.ax` from the repository.
 
 ## Write your first project
 
@@ -44,7 +44,7 @@ cd hello-axiom
 axiom mod init hello-axiom
 mkdir src
 cat > src/main.ax <<'AX'
-def main := println("Hello from Axiom!");
+def main { println("Hello from Axiom!"); }
 AX
 axiom run
 ```
@@ -70,7 +70,7 @@ entry = "src/main.ax"
 [dependencies]
 ```
 
-`main` takes no parameters. An effect-only body, such as the `println` above, exits successfully. Returning an `i32` supplies the process exit status.
+Write the entry point as `def main { ... }`, without `:=` or a trailing semicolon. `main` takes no parameters. An effect-only body, such as the `println` above, exits successfully. Returning an `i32` supplies the process exit status.
 
 ## Check, build, and run
 
@@ -115,12 +115,12 @@ def describe (result : Outcome) := match result with
     | Outcome::Success(value) => "answer: " + str(value)
     | Outcome::Failure(message) => message;
 
-def main := {
+def main {
     let double := fun (value : i32) => value * 2;
     let mut total := 0;
     for i in 0..5 { total += i; }
     println(describe(Outcome::Success(double(total))));
-};
+}
 ```
 
 Run `axiom run`; it prints `answer: 20`.
@@ -141,7 +141,7 @@ Then use it from `src/main.ax`:
 
 ```text
 import math;
-def main := println(math.double(21));
+def main { println(math.double(21)); }
 ```
 
 `pub` makes a declaration available to importing modules. This program prints `42`.
@@ -177,6 +177,8 @@ Set up [VS Code](docs/vscode.md) or [Vim/Neovim](docs/vim.md) for `.ax` highligh
 For existing C++ libraries, `axiom new native-demo --cpp` creates an integration example. Native calls use an explicit `unsafe` boundary. See [C++ integration](docs/cpp.md); ordinary Axiom programs can use the language without writing C++.
 
 ## More documentation
+
+- [0.1.0 release notes](CHANGELOG.md)
 
 - [Getting started](docs/getting-started.md) and [installation](docs/installation.md)
 - [Modules and dependencies](docs/modules.md) and [build configuration](docs/build.md)

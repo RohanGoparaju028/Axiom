@@ -30,7 +30,7 @@ fn main() = {
 
 Parameters require types. An `= expression` body infers its result when the annotation is omitted. Brace bodies default to `unit`/`void` unless a result type is annotated. A final expression without a semicolon supplies the result. Explicit `return expression;` remains available. The final conditional in a function body may return through both branches; every normal path of a non-unit function must return a compatible value.
 
-Direct and mutual recursion require `fn rec` on every function in the cycle. Recursive result types must be explicit. Recursion does not imply tail-call optimization; use loops for unbounded iteration. `main` has the same declaration and inference rules as every other function: `fn main() = { ...; 0 };` is the standard entry example. All executable entry points are named `main`, have no parameters, and return inferred or annotated `i32`. Modules may not declare a second entry point. `check` also accepts library files without main; building an executable requires it.
+Direct and mutual recursion require `fn rec` on every function in the cycle. Recursive result types must be explicit. Recursion does not imply tail-call optimization; use loops for unbounded iteration. `main` has the same declaration and inference rules as every other function: `def main { ...; 0 }` is the standard entry form; legacy `fn` forms remain accepted. All executable entry points are named `main`, have no parameters, and return inferred or annotated `unit` or `i32`. Modules may not declare a second entry point. `check` also accepts library files without main; building an executable requires it.
 
 ## Closures and function types
 

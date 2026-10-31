@@ -50,3 +50,14 @@ reject(lean_duplicate_variant "inductive Choice where | A | A;" "duplicate varia
 reject(lean_missing_arm "inductive Choice where | A | B; def choose (x:Choice) := match x with | Choice::A => 1;" "exhaustive|cover|missing")
 reject(lean_duplicate_binder "def f (x x:i32) := x;" "duplicate")
 reject(lean_missing_definition "def main = 0;" "expected ':='")
+
+# Direct def bodies infer unit or the final expression, just like expression bodies.
+program(direct_main "def main { println(42); }" "42\n")
+program(direct_def_values "def add (a b:i32) { a+b } def main() { println(add(20,22)); }" "42\n")
+program(direct_def_annotation "def positive (n:i32):i32 { if n>0 { return n; } return 0; } def main : i32 { println(positive(42)); return 0; }" "42\n")
+program(direct_def_conditional "def answer (flag:bool) { if flag { 42 } else { 0 } } def main { println(answer(true)); }" "42\n")
+program(direct_main_empty "def main {}" "")
+file(WRITE "${root}/direct_exit.ax" "def main { 7 }")
+command("${root}" 7 run direct_exit.ax)
+reject(direct_main_wrong_result "def main { true }" "entry must be")
+reject(direct_recursive_annotation "def loop (n:i32) { loop(n) } def main { loop(0) }" "explicit result type")

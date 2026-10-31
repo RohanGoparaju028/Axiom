@@ -31,10 +31,10 @@ mkdir src
 ```text
 def add (left right : i32) := left + right;
 
-def main := {
+def main {
     let answer := add(20, 22);
     println(answer);
-};
+}
 ```
 
 Run it:
@@ -72,7 +72,7 @@ Replace `src/main.ax` with:
 
 ```text
 import math;
-def main := println(math.double(21));
+def main { println(math.double(21)); }
 ```
 
 Run `axiom run` again; it prints `42`. Only declarations marked `pub` are available to importing modules.

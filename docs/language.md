@@ -14,6 +14,8 @@ The [functions and expressions guide](ml-dialect.md) defines expression bodies, 
 
 ## Functions and bindings
 
+New code can use `def main { println("Hello!"); }` directly, without `:=` or a trailing semicolon. Unannotated `def` brace bodies infer their result from the final expression; legacy `fn` brace-body rules are described below.
+
 ```text
 fn add(left: i32, right: i32) -> i32 {
     return left + right;
@@ -28,7 +30,7 @@ fn main() -> i32 {
 }
 ```
 
-Parameters require types. Short `fn name(parameters) = expression` definitions infer their result; brace bodies default to `void` unless annotated. The final expression without a semicolon returns its value. Recursive functions must use `fn rec` and an explicit result type. Non-void functions must return on every possible normal path. The executable entry is exactly `fn main() -> i32` with no arguments. Its return value becomes the process exit status. Uncaught checked runtime errors print a diagnostic and exit with status 1.
+Parameters require types. Short `fn name(parameters) = expression` definitions infer their result; brace bodies default to `void` unless annotated. The final expression without a semicolon returns its value. Recursive functions must use `fn rec` and an explicit result type. Non-void functions must return on every possible normal path. The standard executable entry is `def main { ... }` with no arguments; existing `fn main` declarations remain supported. A `unit` result exits with status 0; an `i32` result becomes the process exit status. Uncaught checked runtime errors print a diagnostic and exit with status 1.
 
 `let x := value` is immutable; `let mut x := value` and legacy `let x = value` are mutable; `const` prevents assignment and mutation through that binding. Other mutable aliases can still change shared contents. Bindings require initialization. Local types can be inferred. Parameters are passed by value: owning handles retain their shared allocation, while structs and scalars copy values. All names are case-sensitive; identifiers use ASCII letters, digits, and underscores, starting with a letter or underscore. The `ag_` prefix and identifiers containing double underscores are reserved for generated code.
 

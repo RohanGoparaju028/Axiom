@@ -17,15 +17,26 @@ def describe (result : Outcome) := match result with
     | Outcome::Success(value) => "answer: " + str(value)
     | Outcome::Failure(message) => message;
 
-def main := {
+def main {
     let double := fun (value : i32) => value * 2;
     println(describe(Outcome::Success(add(double(20), 2))));
-};
+}
 ```
 
 ## Definitions and functions
 
-`def name (parameters) : Result := expression;` defines a function. Parameter groups may share a type (`(x y : i32)`) or use comma-separated annotations. Multiple groups are flattened into ordinary arguments: `def add (x : i32) (y : i32) := x + y;` is called as `add(1, 2)`. Omit all groups for a parameterless definition, such as `def main := println("hello");`.
+Use a direct brace body for `main`:
+
+```text
+def main {
+    println("Hello from Axiom!");
+}
+```
+
+There is no `:=` before the block and no required semicolon after it. This form also works for other `def` functions. Without a result annotation, the final expression determines the result; a block ending in a statement has a `unit` result. For example, `def main { 7 }` exits with status 7. With an explicit result annotation, ordinary function return rules apply, including explicit `return`: `def main : i32 { return 0; }`.
+
+
+`def name (parameters) : Result := expression;` defines a function. Parameter groups may share a type (`(x y : i32)`) or use comma-separated annotations. Multiple groups are flattened into ordinary arguments: `def add (x : i32) (y : i32) := x + y;` is called as `add(1, 2)`. Omit all groups for a parameterless definition, such as `def main { println("hello"); }`.
 
 Results are inferred when omitted. Recursive and mutually recursive `def` functions need explicit result types but do not need `rec`. Recursion is not termination-checked or guaranteed to use constant stack space.
 

@@ -198,6 +198,11 @@ public:
                 accept(";");
             }else if(is("fn")||(!foreign&&is("def"))){bool lean=take().text=="def";d->kind="function";d->mode=foreign?"foreign":"normal";d->recursive=lean||accept("rec");if(foreign&&d->recursive)throw Error("foreign functions cannot be rec",t);d->name=name();d->parameters=lean?binders():fields();bool annotated=accept("->")||accept(":");d->result=annotated?type():tvoid;
                 if(foreign){take("=");auto target=take();if(target.kind!="string")throw Error("C++ binding needs a quoted function name",target);d->foreign=decode_string(target);take(";");}
+                else if(lean&&is("{")){
+                    if(annotated)d->body=block(true);
+                    else{d->infer_result=true;auto ret=node("return",t);ret->children={value_block()};d->body=node("block",t);d->body->children={ret};}
+                    accept(";");
+                }
                 else if(lean?(take(":="),true):accept("=")){
                     d->infer_result=!annotated;auto ret=node("return",t);ret->children={expr()};d->body=node("block",t);d->body->children={ret};accept(";");
                 }else d->body=block(true);
@@ -206,8 +211,10 @@ public:
                 d->kind=take().text;d->name=name();take("{");
                 while(!accept("}")){auto n=name();if(d->kind!="enum"){take(":");d->fields.emplace_back(n,type());take(";");}else{if(d->variants.count(n))throw Error("duplicate variant",t);d->variant_order.push_back(n);d->variants[n]=is("(")?fields():std::vector<std::pair<std::string,Type>>{};if(!is("}"))take(",");}}
                 accept(";");if(d->kind=="enum"&&d->variants.empty())throw Error("enum needs at least one variant",t);
+            }else if(!foreign&&is("let")){
+                take("let");d->kind="function";d->mode="normal";d->recursive=false;d->name=name();d->parameters=binders();bool annotated=accept(":");d->result=annotated?type():tvoid;take(":=");d->infer_result=!annotated;auto ret=node("return",t);ret->children={expr()};d->body=node("block",t);d->body->children={ret};accept(";");
             }else if(is("const")||is("val")){auto s=binding();d->kind="constant";d->name=s->text;d->result=s->annotation;d->body=s->children[0];}
-            else throw Error("expected def, fn, inductive, struct, class, enum, datatype, const, val, or global test block",token());
+            else throw Error("expected let, def, fn, inductive, struct, class, enum, datatype, const, val, or global test block",token());
             add(std::move(d));
         }
     }

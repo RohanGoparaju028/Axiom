@@ -335,7 +335,7 @@ reject(axiom_range_binding "fn main()->i32 { for i in 0..2 { i=10; } 0 }" "immut
 reject(axiom_native_unsafe "fn main()->i32 = cpp::std::abs<i32>(1);" "unsafe")
 reject(axiom_native_test "test { const x:i32 = unsafe { cpp::std::abs<i32>(1) }; }" "unsafe")
 reject(axiom_value_block_return "fn main()->i32 { let x={return 1; 0}; 0 }" "return cannot leave")
-reject(axiom_old_fun "fun main():int = 0;" "expected def, fn")
+reject(axiom_old_fun "fun main():int = 0;" "expected let, def, fn")
 reject(axiom_bad_main "fn main(x:i32)->i32 { x }" "entry must be")
 file(WRITE "${root}/no-main.ax" "fn start()->i32 { 0 }")
 command("${root}" 1 build "no-main.ax")
