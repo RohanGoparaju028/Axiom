@@ -2,25 +2,36 @@
 title: Keyword reference
 ---
 
-# Argon keyword reference
 
-This page defines **every reserved word in Argon 0.1.0**, checked against the current parser and compiler on **27 October 2026**. There are **33 reserved words: 32 with implemented meanings and one reserved but unimplemented word, `in`**. Keywords are case-sensitive and cannot be used as your own variable, function, field, or declaration names.
+Lean-inspired `def`, `fun`, `inductive`, `where`, `with`, `mut`, and `:=` forms are described in the [Lean-inspired programming guide](lean-inspired.md). Legacy syntax remains supported.
+# Axiom keyword reference
+
+This page documents Axiom's reserved words. Keywords are case-sensitive and cannot be used as variable, function, field, or declaration names. The additive [ML dialect](ml-dialect.md) introduces the words listed below.
 
 Start with the index to look up a word. Each section then explains its syntax, allowed context, behavior, and relevant restrictions. The examples are complete programs with their expected output; they do not require you to invent missing functions or wrap fragments in `main`.
 
 ## Run the examples
 
-Build/install `argonc` using [Getting started](getting-started.md). Save a complete example under its stated filename, or download it, then run the command shown. Except for the explicitly labeled two-file module example, each program needs just one `.ar` file. The native example uses the system C++ standard library and needs no downloaded library.
+Build/install `axiomc` using [Getting started](getting-started.md). Save a complete example under its stated filename, or download it, then run the command shown. Except for the explicitly labeled two-file module example, each program needs just one `.ar` file. The native example uses the system C++ standard library and needs no downloaded library.
 
-`argonc check FILE.ar` checks Argon types and executes global `test` blocks. `argonc run FILE.ar` also builds and runs the native program. All successful examples below exit with status `0`.
+`axiomc check FILE.ar` checks Axiom types and executes global `test` blocks. `axiomc run FILE.ar` also builds and runs the native program. All successful examples below exit with status `0`.
 
 ## Complete keyword index
 
 | Word | Status | Meaning |
 | --- | --- | --- |
+| `val` | Implemented | Immutable local binding or module constant. |
+| `rec` | Implemented | Mark recursive named functions with `fn rec`. |
+| `type` | Implemented | Declare a record type with named fields. |
+| `datatype` | Implemented | Tagged enum with optional payload types. |
+| `of` | Implemented | Datatype payload or case-expression arms. |
+| `then` | Implemented | True branch of a conditional expression. |
+| `end` | Implemented | End a let expression. |
+| `andalso`, `orelse`, `not` | Implemented | Boolean operations. |
+| `int`, `real`, `unit` | Implemented | Type annotation aliases for i32, f64, void. |
 | [`bool`](#bool) | Implemented | Boolean type. |
 | [`break`](#break) | Implemented | Exit the nearest loop or switch. |
-| [`case`](#case) | Implemented | Introduce a literal branch of a switch. |
+| [`case`](#case) | Implemented | Introduce a switch branch or a case expression. |
 | [`class`](#class) | Implemented | Declare a reference-counted object type. |
 | [`const`](#const) | Implemented | Create an initialized immutable binding or module constant. |
 | [`continue`](#continue) | Implemented | Advance the nearest enclosing loop. |
@@ -36,9 +47,9 @@ Build/install `argonc` using [Getting started](getting-started.md). Save a compl
 | [`i32`](#i32) | Implemented | Signed 32-bit integer type and checked numeric cast. |
 | [`i64`](#i64) | Implemented | Signed 64-bit integer type and checked numeric cast. |
 | [`if`](#if) | Implemented | Execute a block when a Boolean condition is true. |
-| [`import`](#import) | Implemented | Load an Argon module. |
-| [`in`](#in) | Reserved; not implemented | Reserved only; no implemented syntax. |
-| [`let`](#let) | Implemented | Create an initialized mutable local binding. |
+| [`import`](#import) | Implemented | Load an Axiom module. |
+| [`in`](#in) | Implemented | Separates let-expression bindings from its body. |
+| [`let`](#let) | Implemented | Create a local binding; `:=` is immutable unless marked `mut`, while legacy `=` is mutable. |
 | [`match`](#match) | Implemented | Select a value using exhaustive patterns. |
 | [`priv`](#priv) | Implemented | Explicitly keep a declaration private to its module. |
 | [`pub`](#pub) | Implemented | Export a module declaration. |
@@ -60,7 +71,7 @@ Build/install `argonc` using [Getting started](getting-started.md). Save a compl
 
 Declares a named function at module scope. Every parameter needs a type; the return type defaults to `void` if `-> ResultType` is omitted. Functions can call each other and recurse. Arguments are passed by value: scalar/struct values copy, and owning handles retain their shared allocation.
 
-A function returning a value must explicitly return on every normal path. The last expression in a block is not an implicit return. Nested function declarations, closures, first-class function values, and user-defined generic functions are not implemented. An executable needs exactly `fn main() -> i32`, with no parameters.
+A function returning a value must return on every normal path, explicitly or through a final expression without a semicolon. Short `= expression` functions infer results. Typed closures and first-class function values are supported; nested named declarations and user-defined generic functions are not. Recursive functions require `fn rec` and an explicit result type. An executable needs exactly `fn main() -> i32`, with no parameters.
 
 ### return
 
@@ -78,7 +89,7 @@ Indicates that a function returns no value. Omitting the return annotation has t
 
 #### Example: functions and explicit returns
 
-**File: `functions.ar`** · [Download](downloads/keywords/functions.ar)
+**File: `functions.ax`** · [Download](downloads/keywords/functions.ax)
 
 ```text
 fn add(left: i32, right: i32) -> i32 {
@@ -97,7 +108,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run functions.ar
+axiomc run functions.ax
 ```
 
 Expected output:
@@ -112,7 +123,7 @@ Expected output:
 
 **Syntax:** `let name = expression;` or `let name: Type = expression;`
 
-Creates a mutable local binding in a function or `test` block, including nested blocks and a `for` initializer. A value is required at declaration time. The type is inferred from that value when no annotation is supplied; it does not change after inference. Assignment and compound updates must respect that type.
+With legacy `=`, creates a mutable local binding in a function or `test` block, including nested blocks and a `for` initializer. A value is required at declaration time. The type is inferred from that value when no annotation is supplied; it does not change after inference. Assignment and compound updates must respect that type.
 
 Module-level mutable `let` declarations and uninitialized declarations such as `let count: i32;` are not supported.
 
@@ -120,7 +131,7 @@ Module-level mutable `let` declarations and uninitialized declarations such as `
 
 **Syntax:** `const name = expression;` or `const name: Type = expression;`
 
-Creates an immutable binding. Local constants can be initialized from runtime expressions. Module constants are evaluated at compile time; their initializer may use scalar constant expressions and other constants. Calls to Argon functions for compile-time computation belong inside a global `test` block.
+Creates an immutable binding. Local constants can be initialized from runtime expressions. Module constants are evaluated at compile time; their initializer may use scalar constant expressions and other constants. Calls to Axiom functions for compile-time computation belong inside a global `test` block.
 
 A direct `const` inside a global `test` block requires an explicit type and becomes a private module constant. Nested constants remain local to their block. A `pub const` outside the `test` can export a computed value.
 
@@ -128,7 +139,7 @@ A direct `const` inside a global `test` block requires an explicit type and beco
 
 #### Example: mutable local value and constants
 
-**File: `bindings.ar`** · [Download](downloads/keywords/bindings.ar)
+**File: `bindings.ax`** · [Download](downloads/keywords/bindings.ax)
 
 ```text
 const base: i32 = 40;
@@ -143,7 +154,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run bindings.ar
+axiomc run bindings.ax
 ```
 
 Expected output:
@@ -152,7 +163,7 @@ Expected output:
 answer: 42
 ```
 
-## Visibility and Argon modules
+## Visibility and Axiom modules
 
 ### pub
 
@@ -174,17 +185,17 @@ Do not combine `pub` and `priv` on one declaration. Neither keyword controls vis
 
 **Syntax:** `import module;` or `import path.to.module;`
 
-Loads an Argon module. `import support.math;` looks for `support/math.ar`, with `.fe` as a fallback, beside the importing file and then beside the entry file. Imports must appear in the initial import/header-declaration section before other declarations. They may be interspersed with `cpp "header";` declarations in that initial section.
+Loads an Axiom module. `import support.math;` looks for `support/math.ax`, with `.fe` as a fallback, beside the importing file and then beside the entry file. Imports must appear in the initial import/header-declaration section before other declarations. They may be interspersed with `cpp "header";` declarations in that initial section.
 
 Only `pub` declarations are available from another module. Exports can be referenced by a short name, the final module component, or the full path: for example `add`, `math.add`, or `support.math.add`. Ambiguous short names and import cycles are errors. Imported modules cannot declare `main`.
 
-`import` loads Argon source; it does not download packages or import a C++ header. The built-in convenience module names are described in [Modules and builtins](language.md#modules-and-builtins).
+`import` loads Axiom source; it does not download packages or import a C++ header. The built-in convenience module names are described in [Modules and builtins](language.md#modules-and-builtins).
 
 #### Example: public API and a private helper
 
 Create a directory named `modules` containing these **two files**. They must be beside each other.
 
-**File: `modules/math.ar`** · [Download](downloads/keywords/modules/math.ar)
+**File: `modules/math.ax`** · [Download](downloads/keywords/modules/math.ax)
 
 ```text
 priv fn offset() -> i32 {
@@ -198,7 +209,7 @@ pub fn answer() -> i32 {
 }
 ```
 
-**File: `modules/main.ar`** · [Download](downloads/keywords/modules/main.ar)
+**File: `modules/main.ax`** · [Download](downloads/keywords/modules/main.ax)
 
 ```text
 import math;
@@ -213,7 +224,7 @@ fn main() -> i32 {
 Run from the directory containing `modules/`:
 
 ```sh
-argonc run modules/main.ar
+axiomc run modules/main.ax
 ```
 
 Expected output:
@@ -223,7 +234,7 @@ Expected output:
 40
 ```
 
-`math.answer()` may call its private `offset()`. Calling `math.offset()` from `main.ar` is rejected because it is not exported.
+`math.answer()` may call its private `offset()`. Calling `math.offset()` from `main.ax` is rejected because it is not exported.
 
 ## Scalar types and Boolean literals
 
@@ -265,15 +276,15 @@ The false Boolean literal. It has type `bool`, and `!false` evaluates to `true`.
 
 ### string
 
-**Syntax:** `let label: string = "Argon";` or `string(value)`
+**Syntax:** `let label: string = "Axiom";` or `string(value)`
 
 An owned byte string. Literals use double quotes, preserve raw UTF-8 source bytes, and support `\n`, `\r`, `\t`, `\0`, `\"`, and `\\` escapes. `length` counts bytes, and comparisons are bytewise. `+` concatenates strings.
 
-`string(value)` converts a scalar to a string, just like `str(value)`. Strings do not implicitly convert to numbers. Unicode escape syntax and Unicode identifiers are not implemented. String values currently cannot cross the C++ function-binding boundary.
+`string(value)` converts a scalar to a string, just like `str(value)`. Strings do not implicitly convert to numbers. Unicode escape syntax and Unicode identifiers are not implemented. Strings cross the direct C++ call boundary as `std::string`; the legacy `extern cpp fn` signature bridge remains scalar-only.
 
 #### Example: all scalar types and both Boolean literals
 
-**File: `scalars.ar`** · [Download](downloads/keywords/scalars.ar)
+**File: `scalars.ax`** · [Download](downloads/keywords/scalars.ax)
 
 ```text
 fn main() -> i32 {
@@ -282,7 +293,7 @@ fn main() -> i32 {
     let fraction: f64 = 2.5;
     let ready: bool = true;
     let failed: bool = false;
-    let label: string = "Argon";
+    let label: string = "Axiom";
     let widened: i64 = i64(count);
 
     println(count);
@@ -296,7 +307,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run scalars.ar
+axiomc run scalars.ax
 ```
 
 Expected output:
@@ -306,7 +317,7 @@ Expected output:
 3000000000
 2.5
 true
-Argon 42
+Axiom 42
 ```
 
 ## User-defined data types
@@ -329,7 +340,7 @@ The object is destroyed when its last owning handle is released. Strong referenc
 
 #### Example: copying a struct versus sharing a class
 
-**File: `records.ar`** · [Download](downloads/keywords/records.ar)
+**File: `records.ax`** · [Download](downloads/keywords/records.ax)
 
 ```text
 struct Point {
@@ -357,7 +368,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run records.ar
+axiomc run records.ax
 ```
 
 Expected output:
@@ -390,7 +401,7 @@ Each arm is an expression, not a statement block. Nested destructuring, guards, 
 
 #### Example: enum payloads and a scalar wildcard
 
-**File: `matching.ar`** · [Download](downloads/keywords/matching.ar)
+**File: `matching.ax`** · [Download](downloads/keywords/matching.ax)
 
 ```text
 enum Result {
@@ -417,7 +428,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run matching.ar
+axiomc run matching.ax
 ```
 
 Expected output:
@@ -443,7 +454,7 @@ Adds the alternative branch to an `if`. It cannot appear by itself. An `else` bl
 
 #### Example: an if/else chain
 
-**File: `conditions.ar`** · [Download](downloads/keywords/conditions.ar)
+**File: `conditions.ax`** · [Download](downloads/keywords/conditions.ax)
 
 ```text
 fn main() -> i32 {
@@ -460,7 +471,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run conditions.ar
+axiomc run conditions.ax
 ```
 
 Expected output:
@@ -499,7 +510,7 @@ Advances the nearest enclosing loop. In a `for`, control proceeds to the update 
 
 #### Example: for, continue, break, and while
 
-**File: `loops.ar`** · [Download](downloads/keywords/loops.ar)
+**File: `loops.ax`** · [Download](downloads/keywords/loops.ax)
 
 ```text
 fn main() -> i32 {
@@ -519,7 +530,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run loops.ar
+axiomc run loops.ax
 ```
 
 Expected output:
@@ -553,7 +564,7 @@ Introduces the fallback inside a switch, executed only if no case matches. At mo
 
 #### Example: switch without implicit fallthrough
 
-**File: `switches.ar`** · [Download](downloads/keywords/switches.ar)
+**File: `switches.ax`** · [Download](downloads/keywords/switches.ax)
 
 ```text
 fn main() -> i32 {
@@ -569,7 +580,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run switches.ar
+axiomc run switches.ax
 ```
 
 Expected output:
@@ -588,7 +599,7 @@ other
 
 Declares a block at module/global scope that executes during `check`, `build`, `run`, and `emit-cpp`. Its executable statements are not emitted into the runtime program. It is a metaprogramming block, not a declaration for a runtime test runner.
 
-Supported operations include scalar values, arithmetic, casts, local mutation, conditionals, loops, scalar matches/switches, ordinary Argon function calls, assertions, scalar-to-string conversion, and string length. A direct typed `const` becomes a private module constant; `let` and nested constants remain local. Use a separate `pub const` outside the block to export its computed value.
+Supported operations include scalar values, arithmetic, casts, local mutation, conditionals, loops, scalar matches/switches, ordinary Axiom function calls, assertions, scalar-to-string conversion, and string length. A direct typed `const` becomes a private module constant; `let` and nested constants remain local. Use a separate `pub const` outside the block to export its computed value.
 
 Evaluation is limited to 100,000 steps per compilation and 64 nested function calls. I/O, unsafe execution, C++ calls, heap allocations, and aggregate construction are unavailable. Dependencies execute before their importers, and blocks within a module execute in source order. A test constant cannot be read before its binding executes. Failed assertions stop compilation.
 
@@ -596,7 +607,7 @@ Evaluation is limited to 100,000 steps per compilation and 64 nested function ca
 
 #### Example: compute, validate, and export a constant
 
-**File: `metaprogramming.ar`** · [Download](downloads/keywords/metaprogramming.ar)
+**File: `metaprogramming.ax`** · [Download](downloads/keywords/metaprogramming.ax)
 
 ```text
 fn square(value: i32) -> i32 {
@@ -618,7 +629,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run metaprogramming.ar
+axiomc run metaprogramming.ax
 ```
 
 Expected output:
@@ -627,7 +638,7 @@ Expected output:
 49
 ```
 
-You can also run `argonc check metaprogramming.ar`: the assertion executes during checking, without running `main` or requiring the native compiler. It prints a check-success diagnostic, not `49`. Changing the assertion to `assert(computed == 50);` makes checking fail.
+You can also run `axiomc check metaprogramming.ax`: the assertion executes during checking, without running `main` or requiring the native compiler. It prints a check-success diagnostic, not `49`. Changing the assertion to `assert(computed == 50);` makes checking fail.
 
 ## Native C++ integration
 
@@ -635,19 +646,19 @@ You can also run `argonc check metaprogramming.ar`: the assertion executes durin
 
 **Header syntax:** `cpp "header";`
 
-Includes a native header at module scope. Both local and standard headers use this one quoted form. Lookup searches the project’s `cpp/` directory, configured include directories, and then the native compiler’s standard include paths. For example, `cpp "demo.hpp";` can select `cpp/demo.hpp`, while `cpp "cmath";` can select a system header. Header declarations from imported Argon modules contribute to generated C++ too.
+Includes a native header at module scope. Both local and standard headers use this one quoted form. Lookup searches the project’s `cpp/` directory, configured include directories, and then the native compiler’s standard include paths. For example, `cpp "demo.hpp";` can select `cpp/demo.hpp`, while `cpp "cmath";` can select a system header. Header declarations from imported Axiom modules contribute to generated C++ too.
 
-Header declarations can appear in the initial import/header section or among other module declarations. They cannot appear inside a function or `test`. Names must be relative include names: absolute paths and parent traversal are rejected. Header existence and native API signatures are checked during native compilation, not `argonc check`.
+Header declarations can appear in the initial import/header section or among other module declarations. They cannot appear inside a function or `test`. Names must be relative include names: absolute paths and parent traversal are rejected. Header existence and native API signatures are checked during native compilation, not `axiomc check`.
 
 **Foreign-declaration syntax:** `extern cpp fn ...`
 
-Here `cpp` selects the native binding language. Merely including a header does not automatically import its types/functions into Argon. Existing Argon builtins do not need includes. There is no `cpp <header>;` syntax and no raw inline `cpp { ... }` block.
+Here `cpp` selects the native binding language. Merely including a header does not automatically import its types/functions into Axiom. Existing Axiom builtins do not need includes. There is no `cpp <header>;` syntax and no raw inline `cpp { ... }` block.
 
 ### extern
 
 **Syntax:** `extern cpp fn local_name(parameters) -> ResultType = "namespace::function";`
 
-Declares a native function at module scope. Parameters and the result use Argon types, while the quoted target names the C++ function. The declaration ends with `;` and has no Argon body. It can be prefixed with `pub` or `priv`.
+Declares a native function at module scope. Parameters and the result use Axiom types, while the quoted target names the C++ function. The declaration ends with `;` and has no Axiom body. It can be prefixed with `pub` or `priv`.
 
 The current boundary accepts `i32`, `i64`, `f64`, and `bool` arguments, with those types or `void` results. The generated bridge checks the exact native function-pointer signature during native compilation. It does not silently select an unrelated overload.
 
@@ -657,13 +668,13 @@ Standalone `extern fn`, foreign variables, callbacks, variadic arguments, C++ cl
 
 **Syntax:** `unsafe { statements }`
 
-Permits C++ function calls lexically inside the block. Such calls are rejected outside it. An unsafe block may appear inside a function and can contain ordinary Argon statements. It does not disable type checking, bounds checks, arithmetic checks, or reference counting.
+Permits C++ function calls lexically inside the block. Such calls are rejected outside it. An unsafe block may appear inside a function and can contain ordinary Axiom statements. It does not disable type checking, bounds checks, arithmetic checks, or reference counting.
 
-There is no `unsafe fn` modifier. A normal Argon function can contain an unsafe block, so its callers do not automatically need an unsafe block too. Foreign code can still crash or corrupt memory, and wrapping it does not prove it safe. Unsafe blocks cannot execute during compile-time evaluation.
+There is no `unsafe fn` modifier. A normal Axiom function can contain an unsafe block, so its callers do not automatically need an unsafe block too. Foreign code can still crash or corrupt memory, and wrapping it does not prove it safe. Unsafe blocks cannot execute during compile-time evaluation.
 
 #### Example: a standard-library header and native function
 
-**File: `native.ar`** · [Download](downloads/keywords/native.ar)
+**File: `native.ax`** · [Download](downloads/keywords/native.ax)
 
 ```text
 cpp "cmath";
@@ -679,7 +690,7 @@ fn main() -> i32 {
 ```
 
 ```sh
-argonc run native.ar
+axiomc run native.ax
 ```
 
 Expected output:
@@ -688,27 +699,13 @@ Expected output:
 9
 ```
 
-For copied libraries, `argonc new app --cpp` scaffolds a complete example. Native sources in `cpp/` are compiled automatically, and output defaults to `argon-cxx/release/`. Use `--cxx-dir` to select another output directory. See [projects and builds](build.md) for the full workflow.
+For copied libraries, `axiomc new app --cpp` scaffolds a complete example. Native sources in `cpp/` are compiled automatically, and output defaults to `axiom-cxx/release/`. Use `--cxx-dir` to select another output directory. See [projects and builds](build.md) for the full workflow.
 
-## Reserved but not implemented
+## ML expression scope
 
 ### in
 
-`in` is reserved by the parser, so it cannot be used as an identifier. It currently has **no implemented operation**: it does not provide a membership test or a range-based loop. Syntax highlighting may color it because it is reserved; that is not evidence of language support.
-
-**Intentionally invalid example — this must fail:**
-
-```text
-fn main() -> i32 {
-    let values = Array<i32>();
-    for (item in values) {
-        println(item);
-    }
-    return 0;
-}
-```
-
-Save it as `unsupported-in.ar` and run `argonc check unsupported-in.ar`. The current parser rejects the loop. Use an indexed C-style `for` loop instead; maps/sets provide `keys()`/`items()` arrays when you need traversal.
+`in` introduces integer ranges in `for i in start..end` and separates bindings from the body in legacy `let … in … end` expressions. See the [ML dialect reference](ml-dialect.md) for every new form and its restrictions.
 
 ## Builtins, types, and symbols that are not keywords
 
@@ -747,6 +744,6 @@ These names/symbols are implemented, but they are not additional reserved words 
 | `for (item in values)` | Use the C-style `for` form |
 | `cpp <cmath>;` | Use `cpp "cmath";` |
 | Calling a foreign function normally | Put the call in an `unsafe { ... }` block |
-| Including a C++ header and immediately using its objects | Headers do not automatically create Argon bindings; the scalar boundary still applies |
+| Including a C++ header and immediately using its objects | Headers do not automatically create Axiom bindings; the scalar boundary still applies |
 
 For expression precedence, numeric rules, imports, and value semantics, continue with the [language reference](language.md). For concrete data structures, use [memory and collections](memory.md). For what remains unimplemented, see [current status](status.md).

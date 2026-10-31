@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{ site.description | escape }}">
-  <title>{{ page.title | escape }} · Argon documentation</title>
+  <title>{{ page.title | escape }} · Axiom documentation</title>
   <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
   <aside class="sidebar">
-    <a class="brand" href="{{ '/' | relative_url }}"><span class="symbol">Ar</span><span>Argon<small>Language documentation</small></span></a>
+    <a class="brand" href="{{ '/' | relative_url }}"><span class="symbol">ML</span><span>Axiom<small>Language documentation</small></span></a>
     <div class="version">0.1.0 <span>Experimental</span></div>
     <nav aria-label="Documentation">
-      {% assign paths = 'index.md,features.md,installation.md,getting-started.md,keywords.md,language.md,memory.md,cpp.md,build.md,examples.md,vim.md,vscode.md,status.md' | split: ',' %}
+      {% assign paths = 'index.md,features.md,installation.md,getting-started.md,keywords.md,language.md,ml-dialect.md,style-guide.md,memory.md,cpp.md,build.md,examples.md,vim.md,vscode.md,status.md' | split: ',' %}
       {% for path in paths %}
         {% assign item = site.pages | where: 'path', path | first %}
         {% if item %}<a href="{{ item.url | relative_url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a>{% endif %}
@@ -22,9 +22,9 @@
     <a class="repository" href="https://github.com/RohanGoparaju028/Argon">Source on GitHub ↗</a>
   </aside>
   <main id="content">
-    <header class="eyebrow">ARGON / DOCUMENTATION</header>
+    <header class="eyebrow">AXIOM / DOCUMENTATION</header>
     <article>{{ content }}</article>
-    <footer>Argon 0.1.0 · <a href="{{ '/status.html' | relative_url }}">Current status</a> · <a href="https://github.com/RohanGoparaju028/Argon/blob/main/docs/{{ page.path | escape }}">Edit this page on GitHub</a></footer>
+    <footer>Axiom 0.1.0 · <a href="{{ '/status.html' | relative_url }}">Current status</a> · <a href="https://github.com/RohanGoparaju028/Argon/blob/main/docs/{{ page.path | escape }}">Edit this page on GitHub</a></footer>
   </main>
 </body>
 </html>

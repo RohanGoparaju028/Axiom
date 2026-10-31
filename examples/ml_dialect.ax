@@ -1,0 +1,30 @@
+// ML expressions and datatypes, with Axiom's C++ interoperability.
+cpp "cstdlib";
+extern cpp fn native_abs(value: i32) -> i32 = "std::abs";
+
+datatype Result = Ok of int | Error of string;
+val offset: int = 2;
+
+fn rec factorial(n: int): int =
+    if n <= 1 then 1 else n * factorial(n - 1);
+
+fn describe(result: Result): string =
+    case result of
+        Result::Ok(value) => "answer: " + str(value)
+      | Result::Error(message) => message;
+
+fn answer(): int =
+    let
+        val base = factorial(4)
+        val doubled = base * 2
+    in
+        doubled - 6
+    end;
+
+fn main() -> i32 {
+    val result = Result::Ok(answer());
+    println(describe(result));
+    unsafe { println(native_abs(~7)); }
+    assert(not false andalso (offset <> 0));
+    return 0;
+}

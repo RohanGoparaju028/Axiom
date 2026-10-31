@@ -2,18 +2,20 @@
 title: Implemented features
 ---
 
-# What Argon supports today
+# What Axiom supports today
 
-This is the feature inventory for **Argon 0.1.0**. Each feature below is implemented in the current compiler. Examples with `fn main()` are complete programs: save one as `main.ar` and run `argonc run main.ar`.
+This is the feature inventory for **Axiom 0.1.0**. Each feature below is implemented in the current compiler. Examples with `fn main()` are complete programs: save one as `main.ax` and run `axiomc run main.ax`.
 
-For shorter, independent examples—including each collection separately—see [Use each language feature in the README](https://github.com/RohanGoparaju028/Argon#use-each-language-feature).
+For the primary syntax and a complete program, see the [Axiom README](../README.md).
 
-The [keyword reference](keywords.md) defines all 33 reserved words, including the reserved-but-unimplemented `in`, and provides complete downloadable programs.
+The [keyword reference](keywords.md) defines the reserved words, including the new [ML dialect](ml-dialect.md) forms.
 
 ## At a glance
 
 | Area | Available now |
 | --- | --- |
+| Function values | Typed `Fn` values, copy-capturing closures, higher-order calls, and returned functions |
+| ML dialect | `val`, typed expression-bodied `fn`, `datatype`, `case … of`, `if … then … else`, and `let … in … end`; see [syntax and limits](ml-dialect.md) |
 | Source syntax | `.ar` files, braces, semicolons, `//` and `/* ... */` comments |
 | Values | `i32`, `i64`, `f64`, `bool`, `string`, and `void` function results |
 | Variables | Mutable `let`, immutable bindings with `const`, inferred local types, explicit type annotations |
@@ -27,8 +29,8 @@ The [keyword reference](keywords.md) defines all 33 reserved words, including th
 | Collections | `Array`, `LinkedList`, `Deque`, `Stack`, `Queue`, `HashMap`, `HashSet` |
 | Compile-time work | Global `test` blocks, scalar function evaluation, generated constants, assertions |
 | Builtins | Console I/O, scalar-to-string conversion, length, assertions, casts, memory helpers |
-| C++ interop | Explicit scalar function bindings, `unsafe` calls, local native sources and library linking |
-| Project tooling | `argonc new`, `init`, `check`, `build`, `run`, `emit-cpp`, and `doctor` |
+| C++ interop | Direct typed calls, native objects/methods/strings/callbacks, explicit scalar bindings, and native source/library linking |
+| Project tooling | `axiomc new`, `init`, `check`, `build`, `run`, `emit-cpp`, and `doctor` |
 | Editor tooling | Vim/Neovim and VS Code highlighting, checks, runners, and native debugger integration |
 
 ## Variables, types, and operators
@@ -69,7 +71,7 @@ See [types and operations](language.md#types-and-operations) for literal suffixe
 
 ## Functions, visibility, and pipelines
 
-Functions support typed parameters, explicit return values, recursion, and calls to other functions. A function with no result annotation returns `void`. A non-void function needs a return on every normal path.
+Functions support typed parameters, expression bodies, final-expression returns, function values, and typed closures. Short `= expression` bodies infer results; brace bodies without an annotation return `void`. Recursion requires `fn rec` and an explicit result type. See [functions and expressions](ml-dialect.md).
 
 ```text
 fn double(value: i32) -> i32 {
@@ -92,7 +94,7 @@ This prints `42`. `21 |> double` means `double(21)`; pipelines can be chained.
 
 ## Modules and imports
 
-Projects can split code across local files. For example, put this in `math.ar`:
+Projects can split code across local files. For example, put this in `math.ax`:
 
 ```text
 pub fn add(left: i32, right: i32) -> i32 {
@@ -100,7 +102,7 @@ pub fn add(left: i32, right: i32) -> i32 {
 }
 ```
 
-Then put this in `main.ar` beside it:
+Then put this in `main.ax` beside it:
 
 ```text
 import math;
@@ -111,7 +113,7 @@ fn main() -> i32 {
 }
 ```
 
-Run `argonc run main.ar` to print `42`. `import support.math;` resolves `support/math.ar`, with `.fe` as a fallback. Imports appear before declarations. Exported names can be accessed through short or qualified names; ambiguous short names and import cycles are rejected. Imported modules cannot define `main`.
+Run `axiomc run main.ax` to print `42`. `import support.math;` resolves `support/math.ax`, with `.fe` as a fallback. Imports appear before declarations. Exported names can be accessed through short or qualified names; ambiguous short names and import cycles are rejected. Imported modules cannot define `main`.
 
 ## Loops, conditions, and switch
 
@@ -250,7 +252,7 @@ This prints `43`. Index bounds, empty pops, and missing map keys are checked. `i
 
 ## Compile-time metaprogramming with test
 
-A global `test` block executes during checking or compilation. It supports scalar computations, local mutation, loops, conditionals, scalar matching, and ordinary Argon function calls. Direct `const` declarations become private module constants and need explicit types.
+A global `test` block executes during checking or compilation. It supports scalar computations, local mutation, loops, conditionals, scalar matching, and ordinary Axiom function calls. Direct `const` declarations become private module constants and need explicit types.
 
 ```text
 fn square(value: i32) -> i32 {
@@ -290,7 +292,7 @@ The compiler also accepts the convenience imports `std`, `std.io`, `std.core`, `
 
 ## C++ interoperability available now
 
-`cpp "header";` includes local or standard headers using the same quoted syntax. New projects contain `cpp/`; native source files placed there are compiled automatically. Generated code defaults to `argon-cxx/release/`, configurable with `--cxx-dir` or `[project] cxx_dir`.
+`cpp "header";` includes local or standard headers using the same quoted syntax. New projects contain `cpp/`; native source files placed there are compiled automatically. Generated code defaults to `axiom-cxx/release/`, configurable with `--cxx-dir` or `[project] cxx_dir`.
 
 `extern cpp fn` declares a binding to a named C++ function. Call it in an `unsafe` block. Supported boundary types are `i32`, `i64`, `f64`, and `bool`, with `void` also allowed as a result.
 
@@ -305,7 +307,7 @@ fn main() -> i32 {
 }
 ```
 
-This requires a matching C++ header/source and manifest configuration. `argonc new native-demo --cpp` generates that complete working project. The builder compiles and links it; native compilation verifies the exact function signature.
+This requires a matching C++ header/source and manifest configuration. `axiomc new native-demo --cpp` generates that complete working project. The builder compiles and links it; native compilation verifies the exact function signature.
 
 C++ wrappers may use complex libraries internally and expose the supported scalar interface. Direct C++ class, template, string, raw pointer, reference, callback, and automatic C++ API translation are not implemented. Read the [C++ guide](cpp.md) for the complete example and safety boundary.
 
@@ -313,16 +315,16 @@ C++ wrappers may use complex libraries internally and expose the supported scala
 
 | Command | Available behavior |
 | --- | --- |
-| `argonc new DIRECTORY [--cpp]` | Scaffold an application, optionally with a C++ binding example |
-| `argonc init [DIRECTORY] [--cpp]` | Scaffold inside an existing directory without overwriting generated files |
-| `argonc check [FILE]` | Type-check and execute global compile-time blocks |
-| `argonc build [FILE]` | Compile and link a native executable |
-| `argonc run [FILE]` | Build, then run the executable |
-| `argonc build --debug` | Produce a native debug build with source mappings |
-| `argonc emit-cpp [FILE] -o program.cpp` | Export standalone generated C++ |
-| `argonc doctor` | Locate the native C++ compiler |
+| `axiomc new DIRECTORY [--cpp]` | Scaffold an application, optionally with a C++ binding example |
+| `axiomc init [DIRECTORY] [--cpp]` | Scaffold inside an existing directory without overwriting generated files |
+| `axiomc check [FILE]` | Type-check and execute global compile-time blocks |
+| `axiomc build [FILE]` | Compile and link a native executable |
+| `axiomc run [FILE]` | Build, then run the executable |
+| `axiomc build --debug` | Produce a native debug build with source mappings |
+| `axiomc emit-cpp [FILE] -o program.cpp` | Export standalone generated C++ |
+| `axiomc doctor` | Locate the native C++ compiler |
 
-Projects use `Argon.toml` and discover local source dependencies from imports. Native headers, sources, include directories, library directories, and library names can be configured. Each build currently recompiles; there is no package manager or incremental cache.
+Projects use `Axiom.toml` and discover local source dependencies from imports. Native headers, sources, include directories, library directories, and library names can be configured. Each build currently recompiles; there is no package manager or incremental cache.
 
 [Vim/Neovim](vim.md) and [VS Code](vscode.md) integrations provide highlighting and explicit checking, running, building, and debugger launch commands. Debugging uses native LLDB/CodeLLDB representations. See [current status](status.md) for editor/platform verification limits.
 

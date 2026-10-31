@@ -1,10 +1,12 @@
 #pragma once
 #include "frontend.hpp"
-namespace argon {
-struct Project {fs::path root,entry,cxx_dir;std::string name;BuildOptions options;};
-Project open_project(const fs::path& start,bool required=true);
-void create_project(const fs::path&,bool fresh,bool cpp,const fs::path& cxx_dir="argon-cxx");
+namespace axiom {
+struct Project {fs::path root,entry,cxx_dir;std::string name;std::map<std::string,std::string> dependencies;BuildOptions options;};
+Project open_project(const fs::path& start,bool required=true,bool dependencies=true);
+void create_project(const fs::path&,bool fresh,bool cpp,const fs::path& cxx_dir="axiom-cxx");
 void prepare_project(Project&);
+void init_module(const std::string&);
+void get_dependency(const std::string&,const std::string&,const std::string&);
 fs::path build_directory(const Project&,bool debug);
 void validate_output(const Compiled&,const Project&,const fs::path&);
 fs::path find_cpp_compiler();

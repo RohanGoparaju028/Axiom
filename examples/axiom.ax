@@ -1,0 +1,36 @@
+cpp "vector";
+cpp "cstdlib";
+cpp type IntVector = "std::vector<std::int32_t>";
+
+datatype Result = Ok of i32 | Error of string;
+
+fn add(left: i32, right: i32) = left + right;
+
+fn rec factorial(n: i32) -> i32 =
+    if n <= 1 then 1 else n * factorial(n - 1);
+
+fn describe(result: Result) =
+    case result of
+        Result::Ok(value) => "answer: " + str(value)
+      | Result::Error(message) => message;
+
+fn main() = {
+    let total = 0;
+    for i in 0..5 {
+        total += i;
+    }
+    while total < 12 {
+        total += 1;
+    }
+    println(describe(Result::Ok(add(total, 30))));
+    println(factorial(5));
+
+    unsafe {
+        let values = IntVector();
+        values.push_back::<unit>(total);
+        values.push_back::<unit>(30);
+        println(values.at::<i32>(0) + values.at::<i32>(1));
+        println(cpp::std::abs<i32>(~7));
+    }
+    0
+};

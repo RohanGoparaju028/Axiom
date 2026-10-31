@@ -4,7 +4,7 @@ title: Memory and collections
 
 # Reference-counted memory and collections
 
-Argon uses automatic reference counting for shared heap objects and collection storage. Strings and other native value buffers use ordinary C++ scope-based ownership. The runtime is written in C++17 and implements owning handles with `std::shared_ptr` and observers with `std::weak_ptr`.
+Axiom uses automatic reference counting for shared heap objects and collection storage. Strings and other native value buffers use ordinary C++ scope-based ownership. The runtime is written in C++17 and implements owning handles with `std::shared_ptr` and observers with `std::weak_ptr`.
 
 | Source type | Copy behavior |
 | --- | --- |
@@ -57,7 +57,7 @@ Classes and collections are already owning types: `Ptr<Person>` is the same type
 
 Recursive types must cross a class, collection, owning-pointer, or weak-pointer link. A struct cannot contain itself directly by value.
 
-**Strong cycles are not collected.** If a parent owns a child and that child owns its parent, both can remain alive forever. Use a weak link for the back-reference, as in [the family example](https://github.com/RohanGoparaju028/Argon/blob/main/examples/family.ar). Collections can also participate in cycles through their elements. Reference counting does not infer which link should be weak.
+**Strong cycles are not collected.** If a parent owns a child and that child owns its parent, both can remain alive forever. Use a weak link for the back-reference, as in [the family example](https://github.com/RohanGoparaju028/Argon/blob/main/examples/family.ax). Collections can also participate in cycles through their elements. Reference counting does not infer which link should be weak.
 
 ## Collections
 
@@ -91,4 +91,4 @@ Indices are checked. Empty pops and missing map keys raise runtime errors. Index
 
 `const` prevents assignment or mutation through that binding. A separate mutable alias can still change shared contents; this is not deep immutability or a thread-safety guarantee. The current language has no concurrent execution API, and the containers are not synchronized for concurrent mutation in foreign C++ code.
 
-Heap objects and collections are unavailable inside compile-time `test` execution. Compile-time metaprograms remain bounded scalar computations. C++ bindings still accept only scalar signatures; raw native ownership is not silently imported into Argon.
+Heap objects and collections are unavailable inside compile-time `test` execution. Compile-time metaprograms remain bounded scalar computations. C++ bindings still accept only scalar signatures; raw native ownership is not silently imported into Axiom.

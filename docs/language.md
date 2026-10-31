@@ -2,9 +2,15 @@
 title: Language reference
 ---
 
-# Argon language reference
 
-This reference describes the new C++17 implementation, version 0.1.0. Its executable is `argonc`. For the definition, scope, restrictions, and runnable examples of every reserved word, use the [complete keyword reference](keywords.md).
+Lean-inspired `def`, `fun`, `inductive`, `where`, `with`, `mut`, and `:=` forms are described in the [Lean-inspired programming guide](lean-inspired.md). Legacy syntax remains supported.
+# Axiom language reference
+
+This reference describes the new C++17 implementation, version 0.1.0. Its executable is `axiomc`. For the definition, scope, restrictions, and runnable examples of every reserved word, use the [complete keyword reference](keywords.md).
+
+## Axiom core
+
+The [functions and expressions guide](ml-dialect.md) defines expression bodies, typed closures, `fn rec`, mutable `let`, range loops, and datatypes. Use the [Rust-inspired style guide](style-guide.md) for new code. This page also documents the retained statement syntax and checked runtime.
 
 ## Functions and bindings
 
@@ -22,9 +28,9 @@ fn main() -> i32 {
 }
 ```
 
-Parameters require types. Results default to `void`; blocks do not implicitly return their last expression. Non-void functions must return on every possible normal path. The executable entry is exactly `fn main() -> i32` with no arguments. Its return value becomes the process exit status. Uncaught checked runtime errors print a diagnostic and exit with status 1.
+Parameters require types. Short `fn name(parameters) = expression` definitions infer their result; brace bodies default to `void` unless annotated. The final expression without a semicolon returns its value. Recursive functions must use `fn rec` and an explicit result type. Non-void functions must return on every possible normal path. The executable entry is exactly `fn main() -> i32` with no arguments. Its return value becomes the process exit status. Uncaught checked runtime errors print a diagnostic and exit with status 1.
 
-`let` is mutable; `const` prevents assignment and mutation through that binding. Other mutable aliases can still change shared contents. Bindings require initialization. Local types can be inferred. Parameters are passed by value: owning handles retain their shared allocation, while structs and scalars copy values. All names are case-sensitive; identifiers use ASCII letters, digits, and underscores, starting with a letter or underscore. The `ag_` prefix and identifiers containing double underscores are reserved for generated code.
+`let x := value` is immutable; `let mut x := value` and legacy `let x = value` are mutable; `const` prevents assignment and mutation through that binding. Other mutable aliases can still change shared contents. Bindings require initialization. Local types can be inferred. Parameters are passed by value: owning handles retain their shared allocation, while structs and scalars copy values. All names are case-sensitive; identifiers use ASCII letters, digits, and underscores, starting with a letter or underscore. The `ag_` prefix and identifiers containing double underscores are reserved for generated code.
 
 ## Visibility
 
@@ -60,12 +66,12 @@ Arithmetic uses `+ - * / %` and unary `+ -`. Integer arithmetic checks overflow;
 
 Mutable bindings support `=`, `+=`, `-=`, `*=`, `/=`, `%=`, and postfix `++` / `--`. Postfix updates return the old value. Operands and function arguments evaluate from left to right. Assignment evaluates destination indices once, reads the old value for compound assignments, evaluates the right-hand side, then revalidates and writes the current destination. No native reference can escape a collection or pointer operation; reads return values or owning handles.
 
-`value |> function` calls `function(value)`; chains associate left to right. Functions are not currently first-class values.
+`value |> function` calls `function(value)`; chains associate left to right. Functions are first-class values; typed closures use `fn(parameters) => expression` and function types use `Fn<ParameterTypes..., Result>`.
 
 ## Global metaprogramming with test
 
 ```text
-fn factorial(n: i64) -> i64 {
+fn rec factorial(n: i64) -> i64 {
     if (n <= 1) { return 1; }
     return n * factorial(n - 1);
 }
@@ -84,9 +90,9 @@ fn main() -> i32 {
 
 `test` blocks are allowed only at module/global scope. They run during `check`, `build`, `run`, and `emit-cpp`. They are metaprograms, not runtime unit-test declarations. Their executable block bodies are absent from generated runtime code.
 
-Direct `const` bindings in a `test` block require explicit type annotations and become private module constants. `let` bindings and nested constants remain local to that block. Generated constants must not collide with other module declarations. To export one, define a separate `pub const` referring to it outside the block. Ordinary top-level `const` initializers accept constant expressions and references to generated constants; calling an Argon function to generate a constant belongs inside `test`. Ordinary top-level mutable `let` bindings are not accepted.
+Direct `const` bindings in a `test` block require explicit type annotations and become private module constants. `let` bindings and nested constants remain local to that block. Generated constants must not collide with other module declarations. To export one, define a separate `pub const` referring to it outside the block. Ordinary top-level `const` initializers accept constant expressions and references to generated constants; calling an Axiom function to generate a constant belongs inside `test`. Ordinary top-level mutable `let` bindings are not accepted.
 
-The evaluator supports scalar values, arithmetic, casts, comparisons, local mutation, conditionals, loops, scalar `match`, `switch`, and ordinary Argon function calls. `assert` fails compilation when false. `str` and string `length` are available. I/O, C++ calls, unsafe blocks, arrays, and aggregate values are unavailable during compile-time execution. Attempts through helper functions are rejected when evaluated. There are no `meta` or `pure` modifiers.
+The evaluator supports scalar values, arithmetic, casts, comparisons, local mutation, conditionals, loops, scalar `match`, `switch`, and ordinary Axiom function calls. `assert` fails compilation when false. `str` and string `length` are available. I/O, C++ calls, unsafe blocks, arrays, and aggregate values are unavailable during compile-time execution. Attempts through helper functions are rejected when evaluated. There are no `meta` or `pure` modifiers.
 
 Dependencies execute their test blocks before importing modules. Within a module, blocks run in source order. A test constant is unavailable until its declaring binding executes. Cyclic constants are rejected. Evaluation is limited to 100,000 steps per compilation and 64 nested function calls. `return` cannot exit a global test block.
 
@@ -152,16 +158,16 @@ fn main() -> i32 {
 }
 ```
 
-`if (condition) { ... } else { ... }`, `while (condition) { ... }`, and C-style `for` loops require braces for their bodies. `break` exits the nearest loop or switch; `continue` advances the nearest enclosing loop, including when written inside a switch.
+`if condition { ... } else { ... }`, `while condition { ... }`, and both C-style and range `for` loops require braces. Range syntax is `for i in start..end`; bounds evaluate once and the end is exclusive. Parentheses around conditions are optional. `break` exits the nearest loop or switch; `continue` advances the nearest enclosing loop, including when written inside a switch.
 
 `switch` selects a literal `case` or `default` using integer, boolean, or string equality. Each arm has its own local scope. Cases do not fall through; a trailing `break` is optional. There can be only one default. Match provides value construction and payload patterns; switch provides statement-oriented branching.
 
 ## Modules and builtins
 
-`import support.math;` loads `support/math.ar`, with `.fe` as a fallback. Search starts beside the importing file and then beside the entry file. Imports precede declarations. Explicitly `pub` declarations are exported; other declarations are private. Imported exports can use short names, the module's final component (`math.add`), or the full module path (`support.math.add`). Ambiguous short names and cycles are errors. Imported modules cannot declare `main`.
+`import support.math;` loads `support/math.ax`, with `.ar` and `.fe` as legacy fallbacks. Search starts beside the importing file and then beside the entry file. Imports precede declarations. Explicitly `pub` declarations are exported; other declarations are private. Imported exports can use short names, the module's final component (`math.add`), or the full module path (`support.math.add`). Ambiguous short names and cycles are errors. Imported modules cannot declare `main`.
 
 Memory builtins are `weak(owner)`, `upgrade(observer)`, `is_empty(owner)`, `is_expired(observer)`, and `strong_count(handle)`. `*pointer` dereferences an owning pointer; `pointer->field` and `pointer.field` access aggregate fields. Empty access reports a checked runtime error.
 
 Other builtins are `print(value)`, `println(value)` / `println()`, `read_line()`, `str(value)`, `length(value)`, and `assert(condition)`, plus numeric casts. Printing and string conversion accept scalar values. `read_line` reads standard input. `import std;`, `std.io`, `std.core`, `std.collections`, `std.memory`, and `std.math` are accepted convenience imports; general mathematical functions use explicit C++ bindings. Qualified `std.io` and `std.core` builtin names are also recognized.
 
-A global `cpp "header";` declaration includes a local or standard C++ header. Lookup searches the project’s `cpp/` folder, configured include directories, and native standard include paths. Header declarations do not implicitly create Argon function bindings. See [C++ interoperability](cpp.md) for `cpp "header";`, `extern cpp fn`, and `unsafe`. Async, closures, exceptions in Argon syntax, user-defined generics, borrowing, operators on aggregates, and custom destructors are outside this version.
+A global `cpp "header";` declaration includes a local or standard C++ header. Lookup searches the project’s `cpp/` folder, configured include directories, and native standard include paths. Header declarations do not implicitly create Axiom function bindings. See [C++ interoperability](cpp.md) for `cpp "header";`, `extern cpp fn`, and `unsafe`. Direct C++ calls, native type aliases, constructors, methods, and typed callbacks are documented there. Async, exceptions in Axiom syntax, user-defined generics, borrowing, operators on aggregates, and custom destructors are outside this version.

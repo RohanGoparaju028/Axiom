@@ -4,117 +4,109 @@ title: Getting started
 
 # Getting started
 
-## Install the compiler first
+## Install Axiom
 
-Follow the [installation guide](installation.md) for your operating system:
-
-- [macOS](installation.md#macos)
-- [Linux: Ubuntu/Debian, Fedora, or Arch](installation.md#linux)
-- [Windows: MSYS2 UCRT64](installation.md#windows)
-
-It covers prerequisites, building from source, installing `argonc`, and permanent PATH setup. Then verify in your configured terminal:
+Follow the [installation guide](installation.md) for macOS, Linux, or Windows with MSYS2 UCRT64. Installation provides `axiom` and the compatible `axiomc` command. Verify your terminal setup:
 
 ```sh
-argonc --version
-argonc doctor
+axiom --version
+axiom doctor
 ```
 
-The current compiler reports `Argon 0.1.0`. Keep the C++ compiler installed for native application builds. The commands below use macOS/Linux shell syntax, which also works in the Windows UCRT64 Bash terminal from the installation guide.
+Keep Clang or GCC installed: Axiom uses it to produce native executables. The commands below use Bash/zsh syntax, also available in the Windows UCRT64 terminal.
 
-## Create a project outside the compiler repository
+## Initialize your project
 
-For example, on macOS or Linux:
+From the directory where you keep your projects:
 
 ```sh
-argonc new "$HOME/hello-argon"
-cd "$HOME/hello-argon"
-argonc run
+mkdir hello-axiom
+cd hello-axiom
+axiom mod init hello-axiom
+mkdir src
 ```
 
-The destination must not already exist. For an existing directory, use `argonc init` from that directory. Both commands refuse to overwrite generated source or manifest files.
-
-The generated project contains:
+`mod init` creates only `Axiom.toml`. Create `src/main.ax` in your editor:
 
 ```text
-hello-argon/
-  Argon.toml
-  .gitignore
-  src/
-    main.ar
-  cpp/
-    README.md
-```
+def add (left right : i32) := left + right;
 
-Replace `src/main.ar` with:
-
-```text
-fn add(left: i32, right: i32) -> i32 {
-    return left + right;
-}
-
-fn main() -> i32 {
-    let answer = add(20, 22);
+def main := {
+    let answer := add(20, 22);
     println(answer);
-    return 0;
-}
+};
 ```
 
-Run `argonc run` again. It builds the project and prints `42`. `main` has no parameters and returns `i32`; its return value is the process exit code. Functions are private to their module unless marked `pub`.
-
-## Check, build, and inspect
+Run it:
 
 ```sh
-argonc check
-argonc build
-argonc run
-argonc build --debug
-argonc emit-cpp -o program.cpp
+axiom run
 ```
 
-`check` validates Argon code and runs global `test` blocks, but does not verify native C++ headers or symbols. `build` creates the executable in `argon-cxx/release/`; debug output goes in `argon-cxx/debug/`. `run` rebuilds before executing. `emit-cpp` lets you inspect the standalone generated C++.
+The program prints `42`. Parameters have explicit types; results can be inferred. `let answer := ...` is immutable. `main` takes no arguments; an effect-only result exits with status 0, while an `i32` result becomes the exit status.
 
-Use `argonc build --cxx-dir generated-cpp` to select another output folder, or set `[project] cxx_dir` in the manifest. Every project has `cpp/` for native headers and sources; [the native guide](cpp.md) explains `cpp "header";` and automatic compilation.
+If you prefer generated starter files, use `axiom new hello-axiom` in the parent directory instead of the initialization commands above. Its destination must not exist.
 
-A single file also works without a manifest:
+## Build and check
 
 ```sh
-argonc run /absolute/path/to/example.ar
+axiom check
+axiom build
+axiom build --debug
+axiom emit-cpp --stdout
 ```
 
-## Try a C++ binding
+`check` validates Axiom code and evaluates global compile-time `test` blocks. It does not compile native C++ bindings. Release executables go in `axiom-cxx/release/`; debug builds go in `axiom-cxx/debug/`. `run` builds before executing.
+
+You can also use `axiom run path/to/program.ax` without a manifest. See [build configuration](build.md) for output paths and native source configuration.
+
+## Add another module
+
+Create `src/math.ax`:
+
+```text
+pub def double (value : i32) := value * 2;
+```
+
+Replace `src/main.ax` with:
+
+```text
+import math;
+def main := println(math.double(21));
+```
+
+Run `axiom run` again; it prints `42`. Only declarations marked `pub` are available to importing modules.
+
+## Use a library
+
+To use an external library, fetch its Git repository. This URL is a placeholder; substitute a real Axiom library:
 
 ```sh
-argonc new "$HOME/argon-native-demo" --cpp
-cd "$HOME/argon-native-demo"
-argonc run
+axiom get https://github.com/your-team/math.git --name math
 ```
 
-This scaffolds an Argon caller and a C++ header/source pair. The program prints `42`. See [C++ interoperability](cpp.md) for signatures, linking, and the `unsafe` boundary.
+The repository needs `Axiom.toml` identifying its library entry, or a `src/lib.ax` / `lib.ax` file. If it exports `double`, the import example above works after removing the local `src/math.ax`; local files take precedence over dependency aliases.
 
-## Test the compiler repository
+`get` pins the resolved commit in `Axiom.toml`. Commit that manifest with your sources and ignore generated directories:
 
-From your clone of Argon:
+```gitignore
+.axiom/
+axiom-cxx/
+```
+
+To run a freshly cloned application with dependencies:
 
 ```sh
-cd build-install
-ctest --output-on-failure
-cd ..
-argonc run examples/tour.ar
-argonc run examples/pointers.ar
-argonc run examples/collections.ar
+axiom get
+axiom run
 ```
 
-CTest discovers additional editor/debug-symbol tests when their tools are installed; the test count can vary by machine. Global `test` blocks in the language are compile-time metaprograms, not a separate runtime test runner.
+See [modules and dependencies](modules.md) for tags, revisions, transitive dependencies, and local Git libraries.
 
-## Troubleshooting
+## Continue learning
 
-| Problem | What to check |
-| --- | --- |
-| `argonc: command not found` | Add its build/install directory to PATH, or use the executable's absolute path. |
-| No native C++ compiler found | Run `argonc doctor`; install Clang/GCC or set `ARGON_CXX` to one compiler executable. |
-| No manifest found | Run inside the generated project, or pass a source file explicitly. |
-| Unknown or private name | Check spelling, imports, and the declaration's `pub` visibility. |
-| Native binding fails to compile | Check the header, namespace, exact native signature, and `[cpp]` manifest entries. |
-| Empty pointer or bounds error | Check weak upgrades and collection sizes before accessing values. |
-
-Continue with [the language reference](language.md) or [projects and builds](build.md).
+- [Lean-inspired programming](lean-inspired.md): functions, immutable bindings, inductive types, and matching.
+- [Examples](examples.md): programs you can run and modify.
+- [VS Code](vscode.md) and [Vim/Neovim](vim.md): editor setup.
+- [C++ integration](cpp.md): optional native library bindings.
+- [Current limitations](status.md): what is implemented and what remains experimental.

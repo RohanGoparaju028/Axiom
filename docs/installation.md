@@ -2,9 +2,9 @@
 title: Installation
 ---
 
-# Install Argon
+# Install Axiom
 
-These instructions install the current **Argon 0.1.0 source build** on macOS, Linux, and Windows. Package managers install the prerequisites; CMake builds and installs `argonc` itself. After installation, `argonc` creates and builds your applications without a separate application CMake project.
+These instructions install the current **Axiom 0.1.0 source build** on macOS, Linux, and Windows. Package managers install the prerequisites; CMake builds and installs both `axiom` and the compatible `axiomc` command. After installation, `axiom` creates and builds your applications without a separate application CMake project.
 
 Choose your operating system:
 
@@ -16,14 +16,14 @@ Choose your operating system:
 
 | Requirement | Purpose |
 | --- | --- |
-| Git | Download and update the source repository |
+| Git | Download the compiler source and fetch Git dependencies |
 | CMake 3.16 or newer | Configure, build, and install the compiler |
-| A C++17-capable Clang or GCC toolchain | Build `argonc` and compile generated application code |
+| A C++17-capable Clang or GCC toolchain | Build `axiomc` and compile generated application code |
 | Make on macOS/Linux, or Ninja in the Windows instructions | Execute the compiler's CMake build |
 
-**Keep the native compiler installed after installing Argon.** `argonc build` and `argonc run` invoke it for every application build. `argonc check` does not require a native compiler. Python and Node.js are not required for the compiler; Node.js is only needed if you package the optional VS Code extension.
+**Keep the native compiler installed after installing Axiom.** `axiomc build` and `axiomc run` invoke it for every application build. `axiomc check` does not require a native compiler. Python and Node.js are not required for the compiler; Node.js is only needed if you package the optional VS Code extension.
 
-The commands use a separate `build-install/` directory so they can coexist with a development build in `build/`. A user-local prefix avoids needing administrator permission to install Argon itself. Installing system prerequisites may still require it.
+The commands use a separate `build-install/` directory so they can coexist with a development build in `build/`. A user-local prefix avoids needing administrator permission to install Axiom itself. Installing system prerequisites may still require it.
 
 ## macOS
 
@@ -45,7 +45,7 @@ Install [Homebrew](https://brew.sh/) if needed, following its PATH setup instruc
 brew install cmake
 ```
 
-This installs the [CMake prerequisite](https://formulae.brew.sh/formula/cmake), not an Argon package. Check that the tools are available:
+This installs the [CMake prerequisite](https://formulae.brew.sh/formula/cmake), not an Axiom package. Check that the tools are available:
 
 ```sh
 git --version
@@ -56,8 +56,8 @@ clang++ --version
 ### 2. Download, build, and install
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git
-cd Argon
+git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+cd Axiom
 cmake -S . -B build-install -DCMAKE_BUILD_TYPE=Release
 cmake --build build-install --parallel 2
 cmake --install build-install --prefix "$HOME/.local"
@@ -65,7 +65,7 @@ cmake --install build-install --prefix "$HOME/.local"
 
 If you already have a checkout, open its directory and start with the CMake commands. Do not clone another copy unless you want one.
 
-### 3. Add Argon to PATH
+### 3. Add Axiom to PATH
 
 Add this line once to `~/.zshrc` for the default macOS zsh shell:
 
@@ -77,13 +77,13 @@ Reload the configuration:
 
 ```sh
 source ~/.zshrc
-argonc --version
-argonc doctor
+axiomc --version
+axiomc doctor
 ```
 
 For Bash, put the same export line in `~/.bash_profile` and reload that file instead. To enable the current terminal immediately without editing a file, run the export command directly; that change lasts only for that terminal session.
 
-`argonc --version` should print `Argon 0.1.0`; `argonc doctor` should print the path to a C++ compiler. Continue with [your first installed project](#verify-the-installation-with-a-project).
+`axiomc --version` should print `Axiom 0.1.0`; `axiomc doctor` should print the path to a C++ compiler. Continue with [your first installed project](#verify-the-installation-with-a-project).
 
 ## Linux
 
@@ -129,8 +129,8 @@ g++ --version
 ### 2. Download, build, and install
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git
-cd Argon
+git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+cd Axiom
 cmake -S . -B build-install -DCMAKE_BUILD_TYPE=Release
 cmake --build build-install --parallel 2
 cmake --install build-install --prefix "$HOME/.local"
@@ -138,7 +138,7 @@ cmake --install build-install --prefix "$HOME/.local"
 
 For an existing checkout, start with the CMake commands from its root directory. The user-local install does not need `sudo`.
 
-### 3. Add Argon to PATH
+### 3. Add Axiom to PATH
 
 Add this line once to `~/.bashrc` for Bash, or `~/.zshrc` for zsh:
 
@@ -150,15 +150,15 @@ For Bash, reload and verify:
 
 ```sh
 source ~/.bashrc
-argonc --version
-argonc doctor
+axiomc --version
+axiomc doctor
 ```
 
 For zsh, use `source ~/.zshrc` instead. A terminal-only setup can run the export command directly. Continue with [your first installed project](#verify-the-installation-with-a-project).
 
 ## Windows
 
-The documented native Windows route uses **MSYS2 UCRT64 on x86-64 Windows**, with MinGW-w64 GCC and the native MinGW CMake/Ninja packages. These are Bash commands to run in the **MSYS2 UCRT64 terminal**, not PowerShell or Command Prompt. MSVC `cl.exe` is not a supported backend for Argon application builds.
+The documented native Windows route uses **MSYS2 UCRT64 on x86-64 Windows**, with MinGW-w64 GCC and the native MinGW CMake/Ninja packages. These are Bash commands to run in the **MSYS2 UCRT64 terminal**, not PowerShell or Command Prompt. MSVC `cl.exe` is not a supported backend for Axiom application builds.
 
 ### 1. Install MSYS2 and prerequisites
 
@@ -196,45 +196,45 @@ ninja --version
 Run these commands in that same UCRT64 terminal:
 
 ```sh
-git clone https://github.com/RohanGoparaju028/Argon.git
-cd Argon
+git clone https://github.com/RohanGoparaju028/Argon.git Axiom
+cd Axiom
 cmake -S . -B build-install -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
 cmake --build build-install --parallel 2
 cmake --install build-install --prefix "$(cygpath -m "$HOME/.local")"
 ```
 
-`cygpath` converts the MSYS2 home path to a native Windows path for CMake's installation prefix. The executable is installed as `argonc.exe` under `$HOME/.local/bin` in your MSYS2 home directory.
+`cygpath` converts the MSYS2 home path to a native Windows path for CMake's installation prefix. The executable is installed as `axiomc.exe` under `$HOME/.local/bin` in your MSYS2 home directory.
 
-### 3. Add Argon to PATH and select GCC
+### 3. Add Axiom to PATH and select GCC
 
 Add these lines once to the MSYS2 user's `~/.bashrc`:
 
 ```sh
 export PATH="$HOME/.local/bin:$PATH"
-export ARGON_CXX=g++
+export AXIOM_CXX=g++
 ```
 
 Then reload and verify:
 
 ```sh
 source ~/.bashrc
-argonc --version
-argonc doctor
+axiomc --version
+axiomc doctor
 ```
 
-`ARGON_CXX=g++` selects the UCRT64 compiler for application builds, rather than an unrelated Clang installation inherited from Windows PATH. Keep using the UCRT64 terminal so the matching MinGW runtime DLLs remain available. Copying only `argonc.exe` to another machine does not bundle those DLLs or the native compiler.
+`AXIOM_CXX=g++` selects the UCRT64 compiler for application builds, rather than an unrelated Clang installation inherited from Windows PATH. Keep using the UCRT64 terminal so the matching MinGW runtime DLLs remain available. Copying only `axiomc.exe` to another machine does not bundle those DLLs or the native compiler.
 
 ### Using Windows editors
 
-Launch your editor from the configured UCRT64 environment when possible, or configure its environment with both the installed Argon `bin` directory and the MSYS2 `ucrt64/bin` directory. The editor needs access to the executable, native compiler, and runtime DLLs.
+Launch your editor from the configured UCRT64 environment when possible, or configure its environment with both the installed Axiom `bin` directory and the MSYS2 `ucrt64/bin` directory. The editor needs access to the executable, native compiler, and runtime DLLs.
 
 Find the native Windows path to the installed compiler with:
 
 ```sh
-cygpath -w "$HOME/.local/bin/argonc.exe"
+cygpath -w "$HOME/.local/bin/axiomc.exe"
 ```
 
-Use that absolute path for `argon.compilerPath` in VS Code or `g:argon_compiler` in Vim/Neovim. See the [VS Code guide](vscode.md) and [Vim/Neovim guide](vim.md) for setup. Editor plugins are optional and are not activated automatically by installing the compiler.
+Use that absolute path for `axiom.compilerPath` in VS Code or `g:axiom_compiler` in Vim/Neovim. See the [VS Code guide](vscode.md) and [Vim/Neovim guide](vim.md) for setup. Editor plugins are optional and are not activated automatically by installing the compiler.
 
 If using WSL instead, follow the [Linux instructions](#linux) inside your WSL distribution. That produces Linux binaries; it is a separate setup from the native Windows compiler above.
 
@@ -243,21 +243,21 @@ If using WSL instead, follow the [Linux instructions](#linux) inside your WSL di
 Run these commands in your configured macOS/Linux shell or Windows UCRT64 terminal:
 
 ```sh
-argonc new "$HOME/argon-install-demo" --cpp
-cd "$HOME/argon-install-demo"
-argonc check
-argonc run
+axiomc new "$HOME/axiom-install-demo" --cpp
+cd "$HOME/axiom-install-demo"
+axiomc check
+axiomc run
 ```
 
-Use a different project name if that directory already exists. `argonc run` should print:
+Use a different project name if that directory already exists. `axiomc run` should print:
 
 ```text
 42
 ```
 
-This checks more than whether the executable starts: it creates a project, compiles Argon, compiles the generated C++ and the local `cpp/demo.cpp`, links them, and executes the result.
+This checks more than whether the executable starts: it creates a project, compiles Axiom, compiles the generated C++ and the local `cpp/demo.cpp`, links them, and executes the result.
 
-The project contains `src/main.ar`, `cpp/demo.hpp`, `cpp/demo.cpp`, and `Argon.toml`. Generated output is in `argon-cxx/release/`, with an `.exe` executable suffix on Windows. Edit `src/main.ar` and run again. See [Getting started](getting-started.md) for a first Argon program and [C++ interoperability](cpp.md) for native libraries.
+The project contains `src/main.ax`, `cpp/demo.hpp`, `cpp/demo.cpp`, and `Axiom.toml`. Generated output is in `axiom-cxx/release/`, with an `.exe` executable suffix on Windows. Edit `src/main.ax` and run again. See [Getting started](getting-started.md) for a first Axiom program and [C++ interoperability](cpp.md) for native libraries.
 
 ## What gets installed
 
@@ -265,11 +265,11 @@ For an installation prefix such as `$HOME/.local`:
 
 | Location under the prefix | Contents |
 | --- | --- |
-| `bin/argonc` or `bin/argonc.exe` | Compiler and integrated project builder |
-| `share/doc/argon/` | README, license, language documentation, and examples |
-| `share/argon/editors/` | Vim/Neovim plugin and VS Code extension sources |
+| `bin/axiomc` or `bin/axiomc.exe` | Compiler and integrated project builder |
+| `share/doc/axiom/` | README, license, language documentation, and examples |
+| `share/axiom/editors/` | Vim/Neovim plugin and VS Code extension sources |
 
-The Argon runtime source is embedded in the compiler; a separate runtime-header installation is not required. Native compiler/toolchain libraries and third-party C++ dependencies are still supplied by your environment.
+The Axiom runtime source is embedded in the compiler; a separate runtime-header installation is not required. Native compiler/toolchain libraries and third-party C++ dependencies are still supplied by your environment.
 
 To install elsewhere, replace the `--prefix` argument and add that prefix's `bin` directory to PATH. CMake's [installation options](https://cmake.org/cmake/help/latest/manual/cmake.1.html#install-a-project) describe how the prefix works. Prefer a user-writable location unless you deliberately want a system-wide install.
 
@@ -294,7 +294,7 @@ On Windows, in UCRT64:
 cmake --install build-install --prefix "$(cygpath -m "$HOME/.local")"
 ```
 
-Verify with `argonc --version` and `argonc doctor`. The current development compiler may retain the same version string across commits; `git rev-parse --short HEAD` identifies the source revision you built. `git pull --ff-only` stops on divergent local history instead of silently creating a merge.
+Verify with `axiomc --version` and `axiomc doctor`. The current development compiler may retain the same version string across commits; `git rev-parse --short HEAD` identifies the source revision you built. `git pull --ff-only` stops on divergent local history instead of silently creating a merge.
 
 ## Optional compiler tests
 
@@ -306,7 +306,7 @@ ctest --output-on-failure
 cd ..
 ```
 
-On Windows, run this in UCRT64 with `ARGON_CXX=g++` set as above. Extra editor/debugger tests are discovered when the corresponding tools are installed, so test counts vary. These tests are not required just to invoke the installed compiler.
+On Windows, run this in UCRT64 with `AXIOM_CXX=g++` set as above. Extra editor/debugger tests are discovered when the corresponding tools are installed, so test counts vary. These tests are not required just to invoke the installed compiler.
 
 The repository's [compiler CI](https://github.com/RohanGoparaju028/Argon/actions/workflows/ci.yml) builds/tests on Ubuntu, macOS, and Windows UCRT64. The installation workflow has additionally been smoke-tested locally on macOS; this does not certify every Linux distribution or CPU architecture.
 
@@ -314,15 +314,15 @@ The repository's [compiler CI](https://github.com/RohanGoparaju028/Argon/actions
 
 | Symptom | Resolution |
 | --- | --- |
-| `argonc: command not found` | Confirm installation succeeded and the chosen prefix's `bin` directory is on PATH. Reload the shell configuration or open a new terminal. |
-| An older `argonc` runs | Use `command -v argonc` to identify the executable; put the intended installation first on PATH. |
+| `axiomc: command not found` | Confirm installation succeeded and the chosen prefix's `bin` directory is on PATH. Reload the shell configuration or open a new terminal. |
+| An older `axiomc` runs | Use `command -v axiomc` to identify the executable; put the intended installation first on PATH. |
 | CMake cannot find a C++ compiler | Install the OS toolchain above. On Windows, use UCRT64 and explicitly select `g++`. |
 | CMake reports a generator/compiler mismatch | Use a fresh build directory, such as `build-install-new`, when changing generators or toolchains. Do not reuse a cache created for another environment. |
-| `argonc doctor` cannot find a compiler | Keep Clang/GCC installed and on PATH, or set `ARGON_CXX` to one compiler executable path. It cannot be a command with extra flags. |
+| `axiomc doctor` cannot find a compiler | Keep Clang/GCC installed and on PATH, or set `AXIOM_CXX` to one compiler executable path. It cannot be a command with extra flags. |
 | Windows reports missing DLLs | Run in UCRT64 or ensure its `ucrt64/bin` is on the launching process's PATH. |
-| Windows finds the wrong `clang++` | Set `ARGON_CXX=g++` in UCRT64, then run `argonc doctor`. |
+| Windows finds the wrong `clang++` | Set `AXIOM_CXX=g++` in UCRT64, then run `axiomc doctor`. |
 | Installation reports permission denied | Use the user-local prefix above, or another writable directory. |
-| `new` reports the destination already exists | Choose a new directory name, or use `argonc init` in an existing directory without conflicting generated files. |
-| A C++ library header/link fails | Install or copy the library's actual dependencies; Argon installation does not install arbitrary native libraries. See [native integration](cpp.md). |
+| `new` reports the destination already exists | Choose a new directory name, or use `axiomc init` in an existing directory without conflicting generated files. |
+| A C++ library header/link fails | Install or copy the library's actual dependencies; Axiom installation does not install arbitrary native libraries. See [native integration](cpp.md). |
 
-Once `argonc run` prints `42` for the native demo, continue with the [keyword reference](keywords.md), [language reference](language.md), and [build guide](build.md).
+Once `axiomc run` prints `42` for the native demo, continue with the [keyword reference](keywords.md), [language reference](language.md), and [build guide](build.md).

@@ -4,7 +4,7 @@ fn main() -> i32 {
     let fraction: f64 = 2.5;
     let ready: bool = true;
     let failed: bool = false;
-    let label: string = "Argon";
+    let label: string = "Axiom";
     let widened: i64 = i64(count);
 
     println(count);

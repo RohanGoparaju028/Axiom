@@ -9,7 +9,7 @@
 #include <variant>
 #include <vector>
 
-namespace argon {
+namespace axiom {
 namespace fs = std::filesystem;
 struct Token { std::string text, kind, file; int line=1, column=1; };
 struct Error : std::runtime_error {
@@ -39,6 +39,7 @@ struct Node {
     Variable* variable=nullptr; Decl* declaration=nullptr;
     int index=-1;
     std::vector<Variable*> bindings;
+    std::vector<std::pair<std::string,Type>> parameters;
     std::vector<Type> argument_types;
     Value value;
 };
@@ -46,7 +47,7 @@ N node(const std::string&,const Token&,const std::string& text="");
 struct Variable { std::string name,cpp;Type type;bool constant=false; };
 struct Decl {
     std::string kind,name,cpp,mode,foreign;
-    Token token;Unit* unit=nullptr;bool public_=false,test_export=false;
+    Token token;Unit* unit=nullptr;bool public_=false,test_export=false,recursive=false,infer_result=false;
     Type result;
     std::vector<std::pair<std::string,Type>> parameters,fields;
     std::map<std::string,std::vector<std::pair<std::string,Type>>> variants;
@@ -66,6 +67,7 @@ struct Unit {
 };
 void parse(Unit&,const std::string&);
 struct BuildOptions {
+    std::map<fs::path,std::map<std::string,fs::path>> packages;
     std::vector<std::string> headers,libraries;
     std::vector<fs::path> sources,include_dirs,library_dirs;
 };

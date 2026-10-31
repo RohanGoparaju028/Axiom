@@ -1,9 +1,17 @@
 /build/
 /build-*/
 /.build/
-.argon/
-argon-cxx/
+.axiom/
+axiom-cxx/
 *.swp
 .DS_Store
 
 /editors/vscode/*.vsix
+
+# Legacy generated output
+.argon/
+argon-cxx/
+
+# Previous compiler output
+.argsml/
+argsml-cxx/

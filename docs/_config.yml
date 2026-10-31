@@ -1,5 +1,5 @@
-title: Argon
-description: A small native language with reference counting and an integrated C++ build workflow.
+title: Axiom
+description: An ML-family language with mutable variables, typed functions, and native C++ interoperability.
 url: https://rohangoparaju028.github.io
 baseurl: /Argon
 markdown: kramdown

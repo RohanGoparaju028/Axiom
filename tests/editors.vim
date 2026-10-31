@@ -1,23 +1,23 @@
-execute 'set runtimepath^=' . fnameescape($ARGON_EDITOR_ROOT)
+execute 'set runtimepath^=' . fnameescape($AXIOM_EDITOR_ROOT)
 filetype plugin on
 syntax on
-let g:argon_compiler = $ARGON_COMPILER
-execute 'edit ' . fnameescape($ARGON_EXAMPLE)
-call assert_equal('argon', &filetype)
-call assert_equal('argon', get(b:, 'current_syntax', ''))
+let g:axiom_compiler = $AXIOM_COMPILER
+execute 'edit ' . fnameescape($AXIOM_EXAMPLE)
+call assert_equal('axiom', &filetype)
+call assert_equal('axiom', get(b:, 'current_syntax', ''))
 call assert_equal('// %s', &commentstring)
-call assert_equal(2, exists(':ArgonRun'))
-call assert_equal(2, exists(':ArgonDebug'))
-call assert_equal(2, exists(':ArgonRunProject'))
-ArgonCheck
+call assert_equal(2, exists(':AxiomRun'))
+call assert_equal(2, exists(':AxiomDebug'))
+call assert_equal(2, exists(':AxiomRunProject'))
+AxiomCheck
 call assert_equal([], getqflist())
-let s:bad = tempname() . '.ar'
+let s:bad = tempname() . '.ax'
 call writefile(['fn main()->i32{return unknown_name;}'], s:bad)
 execute 'edit ' . fnameescape(s:bad)
 " Diagnostics must work even when Vim only redirects stdout by default.
 let &shellredir = '>%s'
 try
-  ArgonCheck
+  AxiomCheck
 catch
   echom v:exception
   " The explicit command reports failure; the diagnostic must still be navigable.
@@ -37,8 +37,8 @@ package.loaded.dap = { adapters = {}, run = function(config)
   assert(config.preRunCommands[1]:find('ag_fn'))
   called = true
 end }
-vim.g.argon_dap_command = vim.v.progpath
-assert(require('argon').debug({program = '/test/program', cwd = '/test'}))
+vim.g.ax_dap_command = vim.v.progpath
+assert(require('axiom').debug({program = '/test/program', cwd = '/test'}))
 assert(called)
 EOF
 endif

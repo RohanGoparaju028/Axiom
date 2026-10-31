@@ -1,11 +1,13 @@
 #pragma once
 #include <cmath>
+#include <functional>
 #include <cstdint>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <list>
 #include <deque>
+#include <fstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
@@ -63,6 +65,7 @@ template<class T>void print(const T& value){print(str(value));}
 inline void println(){std::cout<<'\n';}
 template<class T>void println(const T& value){print(value);println();}
 inline std::string read_line(){std::string line;std::getline(std::cin,line);return line;}
+inline std::string read_file(const std::string& path){std::ifstream file(path,std::ios::binary);if(!file)fail("cannot open file: "+path);std::ostringstream data;data<<file.rdbuf();if(file.bad())fail("cannot read file: "+path);return data.str();}
 inline void assertion(bool condition){if(!condition)fail("assertion failed");}
 // Every shared allocation is held by an owning handle. No source-level reference
 // returned by get()/at() can escape: the frontend copies values on reads.

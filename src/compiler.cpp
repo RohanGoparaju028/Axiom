@@ -7,7 +7,7 @@
 #include <regex>
 #include <sstream>
 
-namespace argon {
+namespace axiom {
 namespace {
 bool numeric(const Type& t){return t==ti32||t==ti64||t==tf64;}
 bool integer(const Type& t){return t==ti32||t==ti64;}
@@ -21,14 +21,15 @@ std::string path(N n){if(n->kind=="name")return n->text;if(n->kind=="member"){au
 struct Return{Value value;};struct Break{};struct Continue{};
 class Compiler {
     std::vector<std::unique_ptr<Unit>> units;
+    std::map<fs::path,std::map<std::string,fs::path>> packages;
     std::vector<std::unique_ptr<Variable>> variables;
-    std::vector<Decl*> types,functions,constants,type_order;
+    std::vector<Decl*> types,functions,constants,type_order,native_types;
     Unit* entry=nullptr;Unit* current_unit=nullptr;Decl* current_function=nullptr;
     std::vector<std::map<std::string,Variable*>> scopes;
     std::map<std::string,Unit*> loaded;
     std::map<std::string,Decl*> type_names;
     std::set<Decl*> checked,checking;
-    int loops=0,switches=0,unsafe_depth=0;
+    int loops=0,switches=0,unsafe_depth=0,value_blocks=0;
     bool in_test=false;
     size_t steps=0;int eval_depth=0;
     std::map<Variable*,Value> eval_variables;
@@ -38,7 +39,20 @@ class Compiler {
         for(const auto& name:u->imports){
             if(name=="std"||name=="std.io"||name=="std.core"||name=="std.collections"||name=="std.math"||name=="std.memory")continue;
             auto relative=name;std::replace(relative.begin(),relative.end(),'.','/');fs::path found;
-            for(const auto& base:{file.parent_path(),units.front()->file.parent_path()})for(const auto& extension:{".ar",".fe"})if(found.empty()&&fs::is_regular_file(base/(relative+extension)))found=base/(relative+extension);
+            const std::map<std::string,fs::path>* available=nullptr;fs::path package_root;size_t longest=0;
+            for(const auto& package:packages){auto relative_file=file.lexically_relative(package.first);if(!relative_file.empty()&&*relative_file.begin()!=".."&&package.first.string().size()>longest){available=&package.second;package_root=package.first;longest=package.first.string().size();}}
+            std::vector<fs::path> bases{file.parent_path()};
+            if(package_root.empty())bases.push_back(units.front()->file.parent_path());
+            else {bases.push_back(package_root/"src");bases.push_back(package_root);}
+            for(const auto& base:bases)for(const auto& extension:{".ax",".ar",".fe"})if(found.empty()&&fs::is_regular_file(base/(relative+extension)))found=base/(relative+extension);
+            if(found.empty()){
+                auto dot=name.find('.');auto alias=name.substr(0,dot);
+                if(available&&available->count(alias)){
+                    auto library=available->at(alias);
+                    auto candidate=dot==std::string::npos?library:library.parent_path()/(relative.substr(dot+1)+".ax");
+                    if(fs::is_regular_file(candidate))found=candidate;
+                }
+            }
             if(found.empty())throw Error("cannot find import '"+name+"' from "+file.string());u->dependencies[name]=load(found,stack);
         }stack.erase(key);return u;
     }
@@ -48,10 +62,20 @@ class Compiler {
             if(name==item.first||name==dep.first+'.'+item.first||name==shortname+'.'+item.first){if(found&&found!=d)throw Error("ambiguous imported name '"+name+"'",t);found=d;}}
         if(!found&&required)throw Error("unknown or private name '"+name+"'",t);return found;
     }
+    bool native_type(const Type& t){return type_names.count(t.name)&&type_names.at(t.name)->kind=="native_type";}
+    bool native_value(const Type& t){
+        if(scalar(t)||native_type(t))return true;
+        if(t.name=="Fn"){for(size_t i=0;i<t.args.size();++i)if(!(i+1==t.args.size()&&t.args[i]==tvoid)&&!native_value(t.args[i]))return false;return true;}
+        return false;
+    }
     bool class_type(const Type& t){return type_names.count(t.name)&&type_names.at(t.name)->kind=="class";}
     bool owner(const Type& t){return class_type(t)||collection(t)||t.name=="Ptr";}
     Type owning(const Type& t){return class_type(t)||collection(t)?t:Type{"Ptr",{t}};}
     Type resolve(Type t,Unit* u,const Token& tok,bool void_ok=false){
+        if(t.name=="Fn"){
+            if(t.args.empty())throw Error("Fn needs parameter types followed by a result type",tok);
+            for(size_t i=0;i<t.args.size();++i)t.args[i]=resolve(t.args[i],u,tok,i+1==t.args.size());return t;
+        }
         if(collection(t)||t.name=="Ptr"||t.name=="Weak"){
             size_t count=t.name=="HashMap"?2:1;if(t.args.size()!=count)throw Error(t.name+" requires "+std::to_string(count)+" type arguments",tok);for(auto& arg:t.args)arg=resolve(arg,u,tok);
             if((t.name=="HashMap"||t.name=="HashSet")&&!integer(t.args[0])&&t.args[0]!=tstring&&t.args[0]!=tbool)throw Error("hash keys must be integers, bool, or string",tok);
@@ -60,7 +84,7 @@ class Compiler {
         }
         if(!t.args.empty())throw Error("generic user types are not implemented",tok);
         if(t==tvoid){if(!void_ok)throw Error("void cannot be stored as a value",tok);return t;}
-        if(scalar(t))return t;auto* d=lookup(u,t.name,tok);if(d->kind!="struct"&&d->kind!="class"&&d->kind!="enum")throw Error("expected a type",tok);return {d->cpp,{}};
+        if(scalar(t))return t;auto* d=lookup(u,t.name,tok);if(d->kind!="struct"&&d->kind!="class"&&d->kind!="enum"&&d->kind!="native_type")throw Error("expected a type",tok);return {d->cpp,{}};
     }
     Variable* local(const std::string& name){for(auto i=scopes.rbegin();i!=scopes.rend();++i)if(i->count(name))return i->at(name);return nullptr;}
     Variable* variable(const std::string& name,Type type,bool constant){auto v=std::make_unique<Variable>();v->name=name;v->type=std::move(type);v->constant=constant;v->cpp="ag_v"+std::to_string(variables.size())+"_"+name;auto* p=v.get();variables.push_back(std::move(v));return p;}
@@ -90,7 +114,10 @@ class Compiler {
         if(k=="name"||k=="member"){
             if(k=="name")if(auto* v=local(n->text)){n->variable=v;return n->type=v->type;}
             auto q=path(n);bool rooted=!q.empty()&&local(q.substr(0,q.find('.')));
-            if(!q.empty()&&!rooted)if(auto* d=lookup(current_unit,q,n->token,false)){if(d->kind!="constant")throw Error("function or type name needs a call",n->token);n->declaration=d;return n->type=global_type(d);}
+            if(!q.empty()&&!rooted)if(auto* d=lookup(current_unit,q,n->token,false)){if(d->kind=="function"){
+                    if(d->mode=="foreign")throw Error("wrap a foreign function in a fn expression with an unsafe body",n->token);
+                    if(d->infer_result)check_function(d);n->declaration=d;n->type={"Fn",{}};for(const auto& p:d->parameters)n->type.args.push_back(p.second);n->type.args.push_back(d->result);return n->type;
+                }if(d->kind!="constant")throw Error("type name needs a call",n->token);n->declaration=d;return n->type=global_type(d);}
             if(k=="member"){
                 auto type=expression(n->children[0]);if(type.name=="Ptr")type=type.args[0];auto found=type_names.find(type.name);if(found==type_names.end()||(found->second->kind!="struct"&&found->second->kind!="class"))throw Error("field access requires a struct, class, or owning pointer to one",n->token);
                 auto* d=found->second;for(size_t i=0;i<d->fields.size();++i)if(d->fields[i].first==n->text){n->index=int(i);return n->type=d->fields[i].second;}throw Error("unknown field '"+n->text+"'",n->token);
@@ -99,8 +126,22 @@ class Compiler {
         if(k=="variant"){
             auto* d=lookup(current_unit,path(n->children[0]),n->token);if(d->kind!="enum"||!d->variants.count(n->text))throw Error("unknown enum variant",n->token);if(!d->variants.at(n->text).empty())throw Error("variant payload requires a call",n->token);n->declaration=d;return n->type={d->cpp,{}};
         }
+        if(k=="lambda"){
+            auto saved=scopes;auto oldloops=loops,oldswitches=switches;loops=switches=0;++value_blocks;
+            scopes.clear();scopes.emplace_back();
+            for(const auto& scope:saved)for(const auto& item:scope){auto* copy=variable(item.first,item.second->type,true);copy->cpp=item.second->cpp;scopes.back()[item.first]=copy;}
+            scopes.emplace_back();n->type={"Fn",{}};
+            for(const auto& p:n->parameters){if(scopes.back().count(p.first))throw Error("duplicate lambda parameter",n->token);auto t=resolve(p.second,current_unit,n->token);auto* v=variable(p.first,t,false);scopes.back()[p.first]=v;n->bindings.push_back(v);n->type.args.push_back(t);}
+            n->type.args.push_back(expression(n->children[0]));scopes=std::move(saved);loops=oldloops;switches=oldswitches;--value_blocks;return n->type;
+        }
         if(k=="call"){
             auto target=n->children[0];auto actual=args(n);auto q=path(target);bool rooted=!q.empty()&&local(q.substr(0,q.find('.')));
+            if((target->kind=="name"&&rooted)||target->kind=="lambda"||target->kind=="call"||target->kind=="conditional"||target->kind=="block_expr"){
+                auto callable=expression(target);if(callable.name!="Fn")throw Error("value is not callable",n->token);
+                if(callable.args.size()!=actual.size()+1)throw Error("wrong argument count",n->token);
+                for(size_t i=0;i<actual.size();++i){require(callable.args[i],expression(actual[i]),actual[i]->token);n->argument_types.push_back(callable.args[i]);}
+                n->text="invoke";return n->type=callable.args.back();
+            }
             if(target->kind=="name"&&!target->annotation.name.empty()){
                 auto type=resolve(target->annotation,current_unit,n->token);auto kind=target->annotation.name;
                 if(kind=="Ptr"){
@@ -116,7 +157,10 @@ class Compiler {
             if(!q.empty()&&!rooted)if(auto* d=lookup(current_unit,q,n->token,false)){
                 n->declaration=d;if(d->kind=="function"){
                     if(d->mode=="foreign"&&!unsafe_depth)throw Error("C++ calls require an unsafe block",n->token);
-                    arguments(d->parameters,actual,n->token);return n->type=d->result;
+                    if(d->infer_result)check_function(d);arguments(d->parameters,actual,n->token);return n->type=d->result;
+                }if(d->kind=="native_type"){
+                    if(!unsafe_depth)throw Error("C++ constructors require an unsafe block",n->token);
+                    for(auto a:actual){auto t=expression(a);if(!native_value(t))throw Error("unsupported C++ argument type",a->token);}n->text="native_constructor";return n->type={d->cpp,{}};
                 }if(d->kind=="struct"||d->kind=="class"){arguments(d->fields,actual,n->token);n->text=d->kind;return n->type={d->cpp,{}};}throw Error("value is not callable",n->token);
             }
             if(!rooted&&!q.empty()){
@@ -124,8 +168,9 @@ class Compiler {
                 n->text=q;
                 std::vector<Type> ts;for(auto a:actual)ts.push_back(expression(a));
                 if(q=="i32"||q=="i64"||q=="f64"){if(ts.size()!=1||!numeric(ts[0]))throw Error("numeric cast requires one numeric argument",n->token);return n->type={q,{}};}
-                if(q=="print"||q=="println"){if(ts.size()>1||(q=="print"&&ts.empty())||(!ts.empty()&&!scalar(ts[0])))throw Error("printing takes one scalar value (println also accepts none)",n->token);return n->type=tvoid;}
+                if(q=="print"||q=="println"){if(ts.size()>1||(q=="print"&&ts.empty())||(!ts.empty()&&!scalar(ts[0])&&ts[0].name!="native_auto"))throw Error("printing takes one scalar value (println also accepts none)",n->token);return n->type=tvoid;}
                 if(q=="read_line"){if(!ts.empty())throw Error("read_line takes no arguments",n->token);return n->type=tstring;}
+                if(q=="read_file"){if(ts.size()!=1||ts[0]!=tstring)throw Error("read_file takes one path string",n->token);return n->type=tstring;}
                 if(q=="assert"){if(ts.size()!=1||ts[0]!=tbool)throw Error("assert takes one bool",n->token);return n->type=tvoid;}
                 if(q=="str"||q=="string"){if(ts.size()!=1||!scalar(ts[0]))throw Error("str takes one scalar value",n->token);n->text="str";return n->type=tstring;}
                 if(q=="length"){if(ts.size()!=1||(ts[0]!=tstring&&!collection(ts[0])))throw Error("length requires a string or collection",n->token);return n->type=ti64;}
@@ -137,6 +182,9 @@ class Compiler {
             }
             if(target->kind=="member"){
                 auto receiver=target->children[0];auto type=expression(receiver);auto method=target->text;n->text="method."+method;
+                if(native_type(type)||type==tstring||type.name=="native_auto"){
+                    n->kind="native_method";n->text=method;n->annotation={"native_auto",{}};n->children[0]=receiver;return expression(n);
+                }
                 std::vector<std::pair<std::string,Type>> params;Type result;bool mutate=false,valid=true;
                 if((owner(type)||type.name=="Weak")&&method=="use_count")result=ti64;
                 else if((owner(type)||type.name=="Weak")&&method=="reset"){result=tvoid;mutate=true;}
@@ -186,6 +234,35 @@ class Compiler {
             if(op=="+"&&a==tstring&&b==tstring)return n->type=tstring;
             if(!numeric(a)||!numeric(b))throw Error("arithmetic requires numbers",n->token);if(op=="%"&&(!integer(a)||!integer(b)))throw Error("remainder needs integers",n->token);return n->type=common(a,b,n->token);
         }
+        if(k=="unit")return n->type=tvoid;
+        if(k=="unsafe_expr"){
+            if(in_test)throw Error("unsafe is not permitted in compile-time test blocks",n->token);
+            ++unsafe_depth;n->type=expression(n->children[0]);--unsafe_depth;return n->type;
+        }
+        if(k=="block_expr"){
+            auto oldloops=loops,oldswitches=switches;loops=switches=0;++value_blocks;scopes.emplace_back();
+            for(size_t i=0;i+1<n->children.size();++i)statement(n->children[i]);n->type=expression(n->children.back());
+            scopes.pop_back();--value_blocks;loops=oldloops;switches=oldswitches;return n->type;
+        }
+        if(k=="native_call"||k=="native_method"){
+            if(!unsafe_depth||in_test)throw Error("C++ calls require an unsafe block and cannot run at compile time",n->token);
+            n->type=n->annotation.name=="native_auto"?n->annotation:n->annotation.name.empty()?Type{"native_auto",{}}:resolve(n->annotation,current_unit,n->token,true);
+            if(!native_value(n->type)&&n->type!=tvoid&&n->type.name!="native_auto")throw Error("unsupported C++ result type",n->token);
+            size_t first=0;
+            if(k=="native_method"){auto receiver=expression(n->children[0]);if(!native_type(receiver)&&receiver!=tstring&&receiver.name!="native_auto")throw Error("native method requires a C++ object or string",n->token);first=1;}
+            for(size_t i=first;i<n->children.size();++i){auto t=expression(n->children[i]);if(!native_value(t))throw Error("unsupported C++ argument type",n->children[i]->token);}
+            return n->type;
+        }
+        if(k=="conditional"){
+            require(tbool,expression(n->children[0]),n->token);
+            auto yes=expression(n->children[1]);auto no=expression(n->children[2]);
+            return n->type=common(yes,no,n->token);
+        }
+        if(k=="let_expr"){
+            scopes.emplace_back();for(size_t i=0;i+1<n->children.size();++i)statement(n->children[i]);
+            n->type=expression(n->children.back());scopes.pop_back();return n->type;
+        }
+        if(k=="sequence"){for(auto child:n->children)n->type=expression(child);return n->type;}
         if(k=="match"){
             auto type=expression(n->children[0]);Decl* en=type_names.count(type.name)?type_names.at(type.name):nullptr;
             if((!en||en->kind!="enum")&&!scalar(type))throw Error("match requires an enum or scalar",n->token);
@@ -218,10 +295,15 @@ class Compiler {
             if(scopes.back().count(n->text))throw Error("duplicate local binding",n->token);auto actual=expression(n->children[0]);auto type=n->annotation.name.empty()?actual:resolve(n->annotation,current_unit,n->token);require(type,actual,n->token);if(type==tvoid)throw Error("binding requires a value",n->token);
             n->type=type;n->variable=variable(n->text,type,n->constant);scopes.back()[n->text]=n->variable;return false;
         }
-        if(k=="return"){if(!current_function)throw Error("return is not allowed in a global test",n->token);require(current_function->result,n->children.empty()?tvoid:expression(n->children[0]),n->token);return true;}
-        if(k=="expression"){if(!n->children.empty())expression(n->children[0]);return false;}
+        if(k=="return"){if(value_blocks)throw Error("return cannot leave a value block; use its final expression",n->token);if(!current_function)throw Error("return is not allowed in a global test",n->token);require(current_function->result,n->children.empty()?tvoid:expression(n->children[0]),n->token);return true;}
+        if(k=="expression"||k=="tail"){if(!n->children.empty())expression(n->children[0]);return false;}
         if(k=="unsafe"){if(in_test)throw Error("unsafe is not permitted in compile-time test blocks",n->token);++unsafe_depth;auto result=statement(n->children[0]);--unsafe_depth;return result;}
         if(k=="if"){require(tbool,expression(n->children[0]),n->token);bool yes=statement(n->children[1]),no=n->children.size()==3&&statement(n->children[2]);return yes&&no;}
+        if(k=="range_for"){
+            auto begin=expression(n->children[0]),end=expression(n->children[1]);if(!integer(begin)||!integer(end))throw Error("range bounds must be integers",n->token);
+            n->type=common(begin,end,n->token);scopes.emplace_back();n->variable=variable(n->text,n->type,true);scopes.back()[n->text]=n->variable;
+            ++loops;statement(n->children[2]);--loops;scopes.pop_back();return false;
+        }
         if(k=="while"||k=="for"){
             scopes.emplace_back();if(k=="for")statement(n->children[0]);require(tbool,expression(n->children[k=="for"?1:0]),n->token);if(k=="for")expression(n->children[2]);++loops;statement(n->children.back());--loops;scopes.pop_back();return false;
         }
@@ -242,15 +324,15 @@ class Compiler {
         if(n->kind=="block"){int out=normal;for(auto s:n->children)if(out&normal)out=(out&~normal)|flow(s);return out;}
         if(n->kind=="if")return flow(n->children[1])|(n->children.size()==3?flow(n->children[2]):normal);
         if(n->kind=="unsafe")return flow(n->children[0]);
-        if(n->kind=="while"||n->kind=="for")return normal|(flow(n->children.back())&returned);
+        if(n->kind=="while"||n->kind=="for"||n->kind=="range_for")return normal|(flow(n->children.back())&returned);
         if(n->kind=="switch"){int out=0;bool fallback=false;for(size_t i=1;i<n->children.size();++i){auto arm=n->children[i];fallback=fallback||arm->constant;auto f=flow(arm->children.back());out|=(f&~broken)|((f&broken)?normal:0);}return out|(fallback?0:normal);}
         return normal;
     }
     void check_function(Decl* d){
-        if(checked.count(d)||d->mode=="foreign")return;checked.insert(d);auto* oldunit=current_unit;auto* oldfn=current_function;auto oldscopes=scopes;int oldloops=loops,oldswitches=switches,oldunsafe=unsafe_depth;bool oldtest=in_test;
+        if(checked.count(d)||d->mode=="foreign")return;if(checking.count(d))throw Error("recursive functions need an explicit result type",d->token);checking.insert(d);auto* oldunit=current_unit;auto* oldfn=current_function;auto oldscopes=scopes;int oldloops=loops,oldswitches=switches,oldunsafe=unsafe_depth;bool oldtest=in_test;
         current_unit=d->unit;current_function=d;scopes.clear();scopes.emplace_back();loops=switches=unsafe_depth=0;in_test=false;
         for(const auto& a:d->parameters){if(scopes.back().count(a.first))throw Error("duplicate parameter",d->token);auto* v=variable(a.first,a.second,false);d->arguments.push_back(v);scopes.back()[a.first]=v;}
-        statement(d->body);if(d->result!=tvoid&&(flow(d->body)&1))throw Error("function must return a value on every path",d->token);
+        if(d->infer_result)d->result=expression(d->body->children[0]->children[0]);else statement(d->body);checked.insert(d);checking.erase(d);if(d->result!=tvoid&&(flow(d->body)&1))throw Error("function must return a value on every path",d->token);
         current_unit=oldunit;current_function=oldfn;scopes=std::move(oldscopes);loops=oldloops;switches=oldswitches;unsafe_depth=oldunsafe;in_test=oldtest;
     }
     void tick(const Token& t){if(++steps>100000)throw Error("compile-time evaluation exceeded 100000 steps",t);}
@@ -281,6 +363,11 @@ class Compiler {
     bool compare(const std::string& op,const Value& a,const Value& b){if(op=="==")return a==b;if(op=="!=")return a!=b;if(op=="<")return a<b;if(op==">")return a>b;if(op=="<=")return a<=b;return a>=b;}
     Value evaluate(N n){
         tick(n->token);auto k=n->kind;
+        if(k=="unit")return {};
+        if(k=="block_expr"){for(size_t i=0;i+1<n->children.size();++i)execute(n->children[i]);return evaluate(n->children.back());}
+        if(k=="conditional")return convert(evaluate(n->children[std::get<bool>(evaluate(n->children[0]))?1:2]),n->type,n->token);
+        if(k=="let_expr"){for(size_t i=0;i+1<n->children.size();++i)execute(n->children[i]);return evaluate(n->children.back());}
+        if(k=="sequence"){Value result;for(auto child:n->children)result=evaluate(child);return result;}
         if(k=="number"||k=="boolean"||k=="string")return n->value;
         if(k=="name"){if(n->declaration)return global_value(n->declaration);if(n->variable&&eval_variables.count(n->variable))return eval_variables.at(n->variable);throw Error("compile-time evaluation cannot read a runtime binding",n->token);}
         if(k=="member"&&n->declaration)return global_value(n->declaration);
@@ -312,9 +399,13 @@ class Compiler {
         tick(n->token);auto k=n->kind;
         if(k=="block"){for(auto s:n->children)execute(s);return;}
         if(k=="binding"){auto v=convert(evaluate(n->children[0]),n->type,n->token);eval_variables[n->variable]=v;if(n->declaration)n->declaration->value=v;return;}
-        if(k=="expression"){if(!n->children.empty())evaluate(n->children[0]);return;}
+        if(k=="expression"||k=="tail"){if(!n->children.empty())evaluate(n->children[0]);return;}
         if(k=="return")throw Return{n->children.empty()?Value{}:evaluate(n->children[0])};
         if(k=="if"){if(std::get<bool>(evaluate(n->children[0])))execute(n->children[1]);else if(n->children.size()==3)execute(n->children[2]);return;}
+        if(k=="range_for"){
+            auto begin=std::get<int64_t>(evaluate(n->children[0]));auto end=std::get<int64_t>(evaluate(n->children[1]));
+            for(auto i=begin;i<end;++i){tick(n->token);eval_variables[n->variable]=i;try{execute(n->children[2]);}catch(const Break&){break;}catch(const Continue&){}}return;
+        }
         if(k=="while"||k=="for"){
             if(k=="for")execute(n->children[0]);while(std::get<bool>(evaluate(n->children[k=="for"?1:0]))){try{execute(n->children.back());}catch(const Break&){break;}catch(const Continue&){}if(k=="for")evaluate(n->children[2]);}return;
         }
@@ -322,7 +413,7 @@ class Compiler {
         if(k=="break")throw Break{};if(k=="continue")throw Continue{};
         if(k=="unsafe")throw Error("unsafe cannot execute at compile time",n->token);
     }
-    std::string cpp_type(const Type& t){if(t==ti32)return "std::int32_t";if(t==ti64)return "std::int64_t";if(t==tf64)return "double";if(t==tbool)return "bool";if(t==tstring)return "std::string";if(t==tvoid)return "void";if(class_type(t))return "ag_runtime::Ptr<"+t.name+">";if(t.name=="Weak")return "ag_runtime::Weak<"+cpp_type(owning(t.args[0]))+">";if(collection(t)||t.name=="Ptr"){std::string out="ag_runtime::"+t.name+"<";for(size_t i=0;i<t.args.size();++i){if(i)out+=',';out+=cpp_type(t.args[i]);}return out+">";}return t.name;}
+    std::string cpp_type(const Type& t){if(t.name=="Fn"){std::string params;for(size_t i=0;i+1<t.args.size();++i){if(i)params+=',';params+=cpp_type(t.args[i]);}return "std::function<"+cpp_type(t.args.back())+"("+params+")>";}if(t==ti32)return "std::int32_t";if(t==ti64)return "std::int64_t";if(t==tf64)return "double";if(t==tbool)return "bool";if(t==tstring)return "std::string";if(t==tvoid)return "void";if(class_type(t))return "ag_runtime::Ptr<"+t.name+">";if(t.name=="Weak")return "ag_runtime::Weak<"+cpp_type(owning(t.args[0]))+">";if(collection(t)||t.name=="Ptr"){std::string out="ag_runtime::"+t.name+"<";for(size_t i=0;i<t.args.size();++i){if(i)out+=',';out+=cpp_type(t.args[i]);}return out+">";}return t.name;}
     std::string literal(const Value& v,const Type& t){
         if(auto* x=std::get_if<int64_t>(&v)){if(*x==INT64_MIN)return "std::numeric_limits<std::int64_t>::min()";return "static_cast<"+cpp_type(t)+">("+std::to_string(*x)+"LL)";}
         if(auto* x=std::get_if<double>(&v)){std::ostringstream s;s<<std::setprecision(17)<<*x;auto text=s.str();if(text.find_first_of(".eE")==std::string::npos)text+=".0";return "static_cast<double>("+text+")";}
@@ -350,6 +441,33 @@ class Compiler {
     }
     std::string emit_expr(N n){
         auto k=n->kind;if(k=="number"||k=="string"||k=="boolean")return literal(n->value,n->type);
+        if(k=="lambda"){
+            std::string params;for(auto* v:n->bindings){if(!params.empty())params+=',';params+=cpp_type(v->type)+" "+v->cpp;}
+            return "("+cpp_type(n->type)+"([=]("+params+")->"+cpp_type(n->type.args.back())+"{return "+emit_expr(n->children[0])+";}))";
+        }
+        if(k=="unit")return "void()";
+        if(k=="unsafe_expr")return emit_expr(n->children[0]);
+        if(k=="native_call"||k=="native_method"){
+            std::string body,joined,receiver;size_t first=0;
+            if(k=="native_method"){
+                auto object=n->children[0];first=1;
+                if(addressable(object)){auto loc=location(object);body+=loc.setup;receiver=temp();body+=(writable(object)?"auto& ":"const auto& ")+receiver+"="+loc.access+";";}
+                else{receiver=temp();body+="auto "+receiver+"="+emit_expr(object)+";";}
+            }
+            for(size_t i=first;i<n->children.size();++i){auto v=temp();body+="auto "+v+"="+emit_expr(n->children[i])+";";if(i>first)joined+=',';joined+=v;}
+            auto name=n->text;
+            auto call=(k=="native_method"?receiver+".":"")+name+"("+joined+")";
+            if(k=="native_method"&&n->type.name!="native_auto")call="ag_native_"+name+"<"+cpp_type(n->type)+">(0,"+receiver+(joined.empty()?"":","+joined)+")";
+            if(numeric(n->type))call="ag_runtime::cast<"+cpp_type(n->type)+">("+call+")";
+            if(n->type.name=="native_auto")return "([&](){"+body+"return "+call+";}())";
+            return "([&]()->"+cpp_type(n->type)+"{"+body+(n->type==tvoid?call+";":"return "+call+";")+"}())";
+        }
+        if(k=="conditional")return "("+emit_expr(n->children[0])+"?"+coerce(n->type,n->children[1]->type,emit_expr(n->children[1]))+":"+coerce(n->type,n->children[2]->type,emit_expr(n->children[2]))+")";
+        if(k=="let_expr"||k=="block_expr"||k=="sequence"){
+            std::string out="([&]()->"+cpp_type(n->type)+"{\n";
+            for(size_t i=0;i+1<n->children.size();++i)out+=(k=="let_expr"||k=="block_expr")?emit_statement(n->children[i]):"(void)("+emit_expr(n->children[i])+");\n";
+            return out+"return "+emit_expr(n->children.back())+";\n}())";
+        }
         if(k=="name"||k=="member"){
             if(n->declaration)return n->declaration->cpp;if(n->variable)return n->variable->cpp;
             auto base="("+emit_expr(n->children[0])+")";if(n->children[0]->type.name=="Ptr"||class_type(n->children[0]->type))base+=".get()";return base+".ag_f"+std::to_string(n->index);
@@ -374,16 +492,18 @@ class Compiler {
             if(n->text=="pointer_empty")return cpp_type(n->type)+"::from_shared({})";
             if(n->text=="strong_count")return "ag_runtime::strong_count("+emit_expr(n->children[1])+")";
             std::string body;std::vector<std::string> values;
-            auto target=n->children[0];bool array=n->text.rfind("method.",0)==0;Location loc;std::string receiver;
+            auto target=n->children[0];std::string callable;if(n->text=="invoke"){callable=temp();body+="auto "+callable+"="+emit_expr(target)+";";}bool array=n->text.rfind("method.",0)==0;Location loc;std::string receiver;
             if(array){if(addressable(target->children[0])){loc=location(target->children[0]);body+=loc.setup;receiver=loc.access;}else{receiver=temp();body+="auto "+receiver+"="+emit_expr(target->children[0])+";";}}
             for(size_t i=1;i<n->children.size();++i){auto v=temp();auto value=emit_expr(n->children[i]);Type wanted=n->children[i]->type;
-                if(n->declaration){const auto& params=(n->text=="struct"||n->text=="class")?n->declaration->fields:n->text=="variant"?n->declaration->variants.at(target->text):n->declaration->parameters;wanted=params[i-1].second;}
+                if(n->declaration&&n->text!="native_constructor"){const auto& params=(n->text=="struct"||n->text=="class")?n->declaration->fields:n->text=="variant"?n->declaration->variants.at(target->text):n->declaration->parameters;wanted=params[i-1].second;}
                 if(!n->argument_types.empty())wanted=n->argument_types[i-1];
                 body+="auto "+v+"="+coerce(wanted,n->children[i]->type,value)+";";values.push_back(v);
             }
             std::string joined;for(size_t i=0;i<values.size();++i){if(i)joined+=',';joined+=values[i];}
             std::string call;
-            if(n->text=="struct")call=n->declaration->cpp+"{"+joined+"}";
+            if(n->text=="invoke")call=callable+"("+joined+")";
+            else if(n->text=="native_constructor")call=n->declaration->cpp+"("+joined+")";
+            else if(n->text=="struct")call=n->declaration->cpp+"{"+joined+"}";
             else if(n->text=="class")call=cpp_type(n->type)+"::make("+n->declaration->cpp+"{"+joined+"})";
             else if(n->text=="pointer")call=cpp_type(n->type)+"::make("+joined+")";
             else if(n->text=="retain")call=joined;
@@ -392,6 +512,7 @@ class Compiler {
             else if(n->declaration)call=n->declaration->cpp+"("+joined+")";
             else if(array)call=receiver+'.'+n->text.substr(7)+"("+joined+")";
             else if(n->text=="i32"||n->text=="i64"||n->text=="f64")call="ag_runtime::cast<"+cpp_type(n->type)+">("+joined+")";
+            else if(n->text=="read_file")call="ag_runtime::read_file("+joined+")";
             else call="ag_runtime::"+(n->text=="assert"?"assertion":n->text)+"("+joined+")";
             return "([&]()->"+cpp_type(n->type)+"{"+body+(n->type==tvoid?call+";":"return "+call+";")+"}())";
         }
@@ -411,9 +532,14 @@ class Compiler {
         auto k=n->kind;std::string out=line(n->token);
         if(k=="block"){out+="{\n";for(auto s:n->children)out+=emit_statement(s);return out+"}\n";}
         if(k=="binding")return out+(n->constant?"const ":"")+cpp_type(n->type)+" "+n->variable->cpp+"="+coerce(n->type,n->children[0]->type,emit_expr(n->children[0]))+";\n";
-        if(k=="expression")return out+(n->children.empty()?";":"(void)("+emit_expr(n->children[0])+");")+"\n";
+        if(k=="expression"||k=="tail")return out+(n->children.empty()?";":"(void)("+emit_expr(n->children[0])+");")+"\n";
         if(k=="return")return out+"return"+(n->children.empty()?"":" "+coerce(current_function->result,n->children[0]->type,emit_expr(n->children[0])))+";\n";
         if(k=="if"){out+="if("+emit_expr(n->children[0])+")"+emit_statement(n->children[1]);if(n->children.size()==3)out+="else "+emit_statement(n->children[2]);return out;}
+        if(k=="range_for"){
+            auto begin=temp(),end=temp();break_targets.push_back("");
+            out+="{auto "+begin+"="+coerce(n->type,n->children[0]->type,emit_expr(n->children[0]))+";auto "+end+"="+coerce(n->type,n->children[1]->type,emit_expr(n->children[1]))+";for("+cpp_type(n->type)+" "+n->variable->cpp+"="+begin+";"+n->variable->cpp+"<"+end+";++"+n->variable->cpp+")"+emit_statement(n->children[2])+"}\n";
+            break_targets.pop_back();return out;
+        }
         if(k=="while"||k=="for"){
             break_targets.push_back("");if(k=="for")out+="{\n"+emit_statement(n->children[0])+"for(;"+emit_expr(n->children[1])+";"+emit_expr(n->children[2])+")"+emit_statement(n->children[3])+"}\n";else out+="while("+emit_expr(n->children[0])+")"+emit_statement(n->children[1]);break_targets.pop_back();return out;
         }
@@ -430,6 +556,18 @@ class Compiler {
     std::string signature(Decl* d,bool names){std::string out=cpp_type(d->result)+" "+d->cpp+"(";for(size_t i=0;i<d->parameters.size();++i){if(i)out+=',';out+=cpp_type(d->parameters[i].second);if(names)out+=' '+(d->mode=="foreign"?"ag_arg"+std::to_string(i):d->arguments[i]->cpp);}return out+")";}
     std::string generate(const BuildOptions& options,Decl* main){
         std::string out=runtime_source;if(out.rfind("#pragma once\n",0)==0)out.erase(0,13);for(const auto& header:options.headers)out+="\n#include <"+header+">\n";
+        // Prefer an ordinary method; retain typed-template calls when the result
+        // cannot be deduced (for example JSON get<T>()). Both use C++ SFINAE.
+        std::set<std::string> methods;
+        std::function<void(N)> collect=[&](N n){if(!n)return;if(n->kind=="native_method"&&n->type.name!="native_auto")methods.insert(n->text);for(auto child:n->children)collect(child);};
+        for(auto* d:functions)collect(d->body);
+        for(const auto& method:methods){
+            for(bool fallback:{false,true}){
+                auto call="std::forward<O>(o)."+(fallback?"template "+method+"<R>":method)+"(std::forward<A>(a)...)";
+                out+="\ntemplate<class R,class O,class... A> auto ag_native_"+method+"("+(fallback?"long":"int")+",O&& o,A&&... a)->decltype("+call+"){return "+call+";}\n";
+            }
+        }
+        for(auto* d:native_types)out+="\nusing "+d->cpp+"="+d->foreign+";\n";
         for(auto* d:type_order)out+="\nstruct "+d->cpp+";\n";
         for(auto* d:type_order){
             if(d->kind=="enum"){for(size_t i=0;i<d->variant_order.size();++i){out+="\nstruct "+d->cpp+"_v"+std::to_string(i)+"{";auto& fields=d->variants.at(d->variant_order[i]);for(size_t j=0;j<fields.size();++j)out+=cpp_type(fields[j].second)+" ag_f"+std::to_string(j)+";";out+="};\n";}
@@ -445,16 +583,16 @@ class Compiler {
                 auto call="ag_target("+values+")";if(d->result==tf64)call="ag_runtime::finite("+call+")";out+=(d->result==tvoid?call+";":"return "+call+";")+"}\n";
             }else out+=emit_statement(d->body);
         }
-        if(main)out+="\n#line 1 \"<argon entry>\"\nint main(){try{return "+main->cpp+"();}catch(const std::exception& e){std::cerr<<\"Argon runtime error: \"<<e.what()<<'\\n';return 1;}}\n";return out;
+        if(main)out+="\n#line 1 \"<axiom entry>\"\nint main(){try{"+(main->result==tvoid?main->cpp+"();return 0;":"return "+main->cpp+"();")+"}catch(const std::exception& e){std::cerr<<\"Axiom runtime error: \"<<e.what()<<'\\n';return 1;}}\n";return out;
     }
 public:
     Compiled run(const fs::path& source,const BuildOptions& options,bool require_main){
-        std::set<std::string> stack;entry=load(source,stack);int id=0;
-        for(auto& u:units)for(auto& d:u->declarations){auto prefix=d->kind=="function"?"ag_fn":"ag_d";d->cpp=prefix+std::to_string(id++);if(d->kind=="function")d->cpp+='_'+d->name;if(d->kind=="struct"||d->kind=="class"||d->kind=="enum"){types.push_back(d.get());type_names[d->cpp]=d.get();}else if(d->kind=="function")functions.push_back(d.get());else constants.push_back(d.get());}
+        packages=options.packages;std::set<std::string> stack;entry=load(source,stack);int id=0;
+        for(auto& u:units)for(auto& d:u->declarations){auto prefix=d->kind=="function"?"ag_fn":"ag_d";d->cpp=prefix+std::to_string(id++);if(d->kind=="function")d->cpp+='_'+d->name;if(d->kind=="struct"||d->kind=="class"||d->kind=="enum"){types.push_back(d.get());type_names[d->cpp]=d.get();}else if(d->kind=="native_type"){if(!std::regex_match(d->foreign,std::regex("[A-Za-z_][A-Za-z_0-9:<> ,]*")))throw Error("invalid C++ type name",d->token);native_types.push_back(d.get());type_names[d->cpp]=d.get();}else if(d->kind=="function")functions.push_back(d.get());else constants.push_back(d.get());}
         auto fields=[&](std::vector<std::pair<std::string,Type>>& items,Decl* d){std::set<std::string> seen;for(auto& f:items){if(!seen.insert(f.first).second)throw Error("duplicate field or parameter",d->token);f.second=resolve(f.second,d->unit,d->token);}};
         for(auto* d:types){fields(d->fields,d);for(auto& v:d->variants)fields(v.second,d);}
         std::map<Decl*,int> state;
-        std::function<void(Decl*)> visit=[&](Decl* d){if(state[d]==1)throw Error("recursive value types require a Ptr, Weak, class, or collection link",d->token);if(state[d]==2)return;state[d]=1;std::function<void(const Type&)> dependency=[&](const Type& t){if(owner(t)||t.name=="Weak")return;if(type_names.count(t.name))visit(type_names.at(t.name));};for(const auto& f:d->fields)dependency(f.second);for(const auto& v:d->variants)for(const auto& f:v.second)dependency(f.second);state[d]=2;type_order.push_back(d);};for(auto* d:types)visit(d);
+        std::function<void(Decl*)> visit=[&](Decl* d){if(state[d]==1)throw Error("recursive value types require a Ptr, Weak, class, or collection link",d->token);if(state[d]==2)return;state[d]=1;std::function<void(const Type&)> dependency=[&](const Type& t){if(owner(t)||t.name=="Weak"||native_type(t))return;if(type_names.count(t.name))visit(type_names.at(t.name));};for(const auto& f:d->fields)dependency(f.second);for(const auto& v:d->variants)for(const auto& f:v.second)dependency(f.second);state[d]=2;type_order.push_back(d);};for(auto* d:types)visit(d);
         for(auto* d:functions){fields(d->parameters,d);d->result=resolve(d->result,d->unit,d->token,true);if(d->mode=="foreign"){
                 if(!std::regex_match(d->foreign,std::regex("[A-Za-z_][A-Za-z_0-9]*(::[A-Za-z_][A-Za-z_0-9]*)*")))throw Error("invalid C++ function name",d->token);
                 for(const auto& p:d->parameters)if(!numeric(p.second)&&p.second!=tbool)throw Error("C++ bindings currently accept only numeric and bool parameters",d->token);
@@ -463,12 +601,16 @@ public:
         for(auto* d:constants)if(!d->result.name.empty())d->result=resolve(d->result,d->unit,d->token);
         for(auto* d:constants)global_type(d);
         for(auto* d:functions)check_function(d);
+        std::map<Decl*,std::set<Decl*>> calls;
+        for(auto* d:functions){std::function<void(N)> walk=[&](N n){if(!n)return;if(n->declaration&&n->declaration->kind=="function")calls[d].insert(n->declaration);for(auto c:n->children)walk(c);};walk(d->body);}
+        for(auto* d:functions){std::set<Decl*> seen;std::function<bool(Decl*)> reaches=[&](Decl* f){if(!seen.insert(f).second)return false;for(auto* next:calls[f])if(next==d||reaches(next))return true;return false;};if(reaches(d)&&!d->recursive)throw Error("recursive function '"+d->name+"' must be declared fn rec",d->token);}
+
         for(auto& u:units){current_unit=u.get();current_function=nullptr;scopes.clear();in_test=true;for(auto test:u->tests)statement(test);}in_test=false;
         std::set<Unit*> done;size_t test_count=0;
         std::function<void(Unit*)> tests=[&](Unit* u){if(!done.insert(u).second)return;for(const auto& dep:u->dependencies)tests(dep.second);for(auto test:u->tests){++test_count;eval_variables.clear();execute(test);}};tests(entry);
         for(auto* d:constants)global_value(d);
-        Decl* main=nullptr;if(entry->names.count("main")){main=entry->names.at("main");if(main->kind!="function"||main->mode=="foreign"||!main->parameters.empty()||main->result!=ti32)throw Error("entry must be fn main() -> i32",main->token);}
-        for(const auto& u:units)if(u.get()!=entry&&u->names.count("main"))throw Error("an imported module cannot define main");if(require_main&&!main)throw Error("an executable needs fn main() -> i32");
+        Decl* main=nullptr;if(entry->names.count("main")){main=entry->names.at("main");if(main->kind!="function"||main->mode=="foreign"||!main->parameters.empty()||(main->result!=ti32&&main->result!=tvoid))throw Error("entry must be a parameterless fn main returning i32 or unit",main->token);}
+        for(const auto& u:units)if(u.get()!=entry&&u->names.count("main"))throw Error("an imported module cannot define main");if(require_main&&!main)throw Error("an executable needs fn main returning i32 or unit");
         BuildOptions native=options;
         for(const auto& u:units)for(const auto& header:u->headers)
             if(std::find(native.headers.begin(),native.headers.end(),header)==native.headers.end())native.headers.push_back(header);

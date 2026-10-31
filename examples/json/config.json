@@ -1,0 +1,5 @@
+{
+  "name": "Axiom",
+  "version": 1,
+  "features": ["expressions", "cpp"]
+}

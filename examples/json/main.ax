@@ -1,0 +1,14 @@
+cpp "nlohmann/json.hpp";
+cpp type Json = "nlohmann::json";
+
+fn main() = {
+    let source = read_file("examples/json/config.json");
+    let config: Json = unsafe {
+        cpp::nlohmann::json::parse(source)
+    };
+
+    unsafe {
+        println(config.at("name").get::<string>());
+        println(config.at("version").get::<i32>());
+    }
+};

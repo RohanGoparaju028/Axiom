@@ -1,0 +1,17 @@
+{
+  "name": "Axiom",
+  "scopeName": "source.axiom",
+  "patterns": [
+    {"name": "comment.line.double-slash.ax", "begin": "//", "end": "$"},
+    {"name": "comment.block.ax", "begin": "/\\*", "end": "\\*/"},
+    {"name": "string.quoted.double.ax", "begin": "\"", "end": "\"", "patterns": [{"name": "constant.character.escape.ax", "match": "\\\\."}]},
+    {"name": "keyword.control.ax", "match": "\\b(where|with|of|then|end|andalso|orelse|not|test|match|switch|case|default|if|else|while|for|in|break|continue|return|unsafe)\\b"},
+    {"name": "storage.modifier.ax", "match": "\\b(mut|val|pub|priv|extern|cpp|const|let|import)\\b"},
+    {"name": "storage.type.ax", "match": "\\b(def|fun|inductive|rec|type|datatype|int|real|unit|fn|struct|class|enum|i32|i64|f64|bool|string|void)\\b"},
+    {"name": "support.type.ax", "match": "\\b(Fn|Ptr|Weak|Array|LinkedList|Deque|Stack|Queue|HashMap|HashSet)\\b"},
+    {"name": "constant.language.ax", "match": "\\b(true|false)\\b"},
+    {"name": "constant.numeric.ax", "match": "\\b[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?(?:i32|i64|f64)?\\b"},
+    {"name": "support.function.ax", "match": "\\b(print|println|read_line|assert|str|length|weak|upgrade|is_empty|is_expired|strong_count)\\b"},
+    {"name": "entity.name.function.ax", "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()"}
+  ]
+}
